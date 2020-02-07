@@ -174,7 +174,10 @@ class TestSplitToSuites:
         self, example_suite, durations_path
     ):
         # Only 4/10 tests listed here, avg duration 1 sec
-        test_path = "test_it_adapts_splits_based_on_new_and_deleted_tests0/test_it_adapts_splits_based_on_new_and_deleted_tests.py::{}"
+        test_path = (
+            "test_it_adapts_splits_based_on_new_and_deleted_tests0/"
+            "test_it_adapts_splits_based_on_new_and_deleted_tests.py::{}"
+        )
         durations = [
             [test_path.format("test_1"), 1],
             [test_path.format("test_5"), 2.6],

@@ -8,7 +8,8 @@ from _pytest.config import create_terminal_writer
 def pytest_addoption(parser):
     group = parser.getgroup(
         "Split tests into groups which execution time is about the same. "
-        "Run first the whole suite with --store-durations to save information about test execution times"
+        "Run first the whole suite with --store-durations to save information "
+        "about test execution times"
     )
     group.addoption(
         "--store-durations",
