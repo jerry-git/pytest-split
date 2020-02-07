@@ -31,7 +31,6 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Implementation :: CPython",
         "Framework :: Pytest",
     ],
     entry_points={"pytest11": ["pytest-split = pytest_split.plugin"]},
