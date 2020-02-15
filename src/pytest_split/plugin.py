@@ -87,6 +87,8 @@ def pytest_sessionfinish(session, exitstatus):
                 if hasattr(test_report, "duration"):
                     stage = getattr(test_report, "when", "")
                     duration = test_report.duration
+                    if duration < 0:
+                        continue
                     if (
                         stage == "teardown"
                         and duration > STORE_DURATIONS_TEARDOWN_THRESHOLD
