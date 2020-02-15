@@ -4,6 +4,11 @@ from collections import defaultdict, OrderedDict
 
 from _pytest.config import create_terminal_writer
 
+# For some reason pytest reports some teardown durations to be 10M - 100M seconds long
+# Thus we have this threshold to not take into account the ones which are
+# definitely not correct
+STORE_DURATIONS_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+
 
 def pytest_addoption(parser):
     group = parser.getgroup(
@@ -80,6 +85,14 @@ def pytest_sessionfinish(session, exitstatus):
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:
                 if hasattr(test_report, "duration"):
+                    stage = getattr(test_report, "when", "")
+                    duration = test_report.duration
+                    if (
+                        stage == "teardown"
+                        and duration > STORE_DURATIONS_TEARDOWN_THRESHOLD
+                    ):
+                        # Ignore not legit teardown durations
+                        continue
                     durations[test_report.nodeid] += test_report.duration
 
         with open(report_path, "w") as f:
