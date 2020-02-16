@@ -14,6 +14,7 @@ setuptools.setup(
     author="Jerry Pussinen",
     author_email="jerry.pussinen@gmail.com",
     description="Pytest plugin for splitting test suite based on test execution time",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jerry-git/pytest-split",
     packages=setuptools.find_packages(where="src"),
