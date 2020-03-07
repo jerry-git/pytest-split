@@ -4,9 +4,7 @@ from collections import defaultdict, OrderedDict
 
 from _pytest.config import create_terminal_writer
 
-# For some reason pytest reports some teardown durations to be 10M - 100M seconds long
-# Thus we have this threshold to not take into account the ones which are
-# definitely not correct
+# Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_TEARDOWN_THRESHOLD = 60 * 10  # seconds
 
 
@@ -87,6 +85,7 @@ def pytest_sessionfinish(session, exitstatus):
                 if hasattr(test_report, "duration"):
                     stage = getattr(test_report, "when", "")
                     duration = test_report.duration
+                    # These ifs be removed after this is solved: https://github.com/spulec/freezegun/issues/286
                     if duration < 0:
                         continue
                     if (
