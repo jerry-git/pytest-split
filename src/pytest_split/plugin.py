@@ -57,7 +57,7 @@ def pytest_collection_modifyitems(session, config, items):
         if store_durations:
             # Don't split if we are storing durations
             return
-
+    total_tests_count = len(items)
     if splits and group:
         with open(durations_report_path) as f:
             stored_durations = OrderedDict(json.load(f))
@@ -70,7 +70,7 @@ def pytest_collection_modifyitems(session, config, items):
         terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
         terminal_writer = create_terminal_writer(config)
         message = terminal_writer.markup(
-            " Running group {}/{} ({} tests)\n".format(group, splits, len(items))
+            " Running group {}/{} ({}/{} tests)\n".format(group, splits, len(items), total_tests_count)
         )
         terminal_reporter.write(message)
 
