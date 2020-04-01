@@ -42,10 +42,23 @@ def pytest_addoption(parser):
         help="The group of tests that should be executed (first one is 1)",
     )
 
+    
+def read_circleci_env_variables():
+    """Read and convert CIRCLE_* environment variables"""
+    circle_node_total = int(os.environ.get("CIRCLE_NODE_TOTAL", "1").strip() or "1")
+    circle_node_index = int(os.environ.get("CIRCLE_NODE_INDEX", "0").strip() or "0")
 
+    return (circle_node_total, circle_node_index + 1)
+    
 def pytest_collection_modifyitems(session, config, items):
-    splits = config.option.splits
-    group = config.option.group
+    if os.environ.get("CIRCLECI", None) == "true":
+        splits, group = read_circleci_env_variables()
+        if not all((splits, group)):
+            splits = config.option.splits
+            group = config.option.group
+    else:
+        splits = config.option.splits
+        group = config.option.group
     store_durations = config.option.store_durations
     durations_report_path = config.option.durations_path
 
