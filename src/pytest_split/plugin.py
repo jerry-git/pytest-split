@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 from _pytest.config import create_terminal_writer
 
 # Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
-STORE_DURATIONS_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
 
 
 def pytest_addoption(parser):
@@ -70,7 +70,9 @@ def pytest_collection_modifyitems(session, config, items):
         terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
         terminal_writer = create_terminal_writer(config)
         message = terminal_writer.markup(
-            " Running group {}/{} ({}/{} tests)\n".format(group, splits, len(items), total_tests_count)
+            " Running group {}/{} ({}/{} tests)\n".format(
+                group, splits, len(items), total_tests_count
+            )
         )
         terminal_reporter.write(message)
 
@@ -89,8 +91,8 @@ def pytest_sessionfinish(session, exitstatus):
                     if duration < 0:
                         continue
                     if (
-                        stage == "teardown"
-                        and duration > STORE_DURATIONS_TEARDOWN_THRESHOLD
+                        stage in ("teardown", "setup")
+                        and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
                         continue
