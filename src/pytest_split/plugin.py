@@ -136,33 +136,21 @@ def _calculate_suite_start_and_end_idx(splits, group, items, stored_durations):
 
     # Modify start_idx and end_idx so they match start/end of an ipynb file
     if _is_ipy_notebook(item_node_ids[start_idx]):
-        start_idx = _get_boundary_idx_for_ipynb(item_node_ids, start_idx, "start")
+        start_idx = _get_boundary_idx(item_node_ids, start_idx, "start")
     if _is_ipy_notebook(item_node_ids[end_idx - 1]):  # since Python indexing is [a, b)
-        end_idx = _get_boundary_idx_for_ipynb(item_node_ids, end_idx - 1, "end")
+        end_idx = _get_boundary_idx(item_node_ids, end_idx - 1, "end")
 
     return start_idx, end_idx
 
 
 def _is_ipy_notebook(node_id):
-    path = node_id.split("::")[0]
-    if path.endswith(".ipynb"):
-        return True
-    return False
+    fpath = node_id.split("::")[0]
+    return True if fpath.endswith(".ipynb") else False
 
 
-def _get_boundary_idx_for_ipynb(item_node_ids, idx, mode):
-    if mode not in ["start", "end"]:
-        raise Exception(f"Unsupported mode: {mode}")
+def _get_boundary_idx(item_node_ids, idx, mode):
+    assert mode in ["start", "end"]
     ipynb_node_id = item_node_ids[idx]
-    fname = ipynb_node_id.split("::")[0]
-    same_notebook = True
-    while same_notebook:
-        if idx in [0, len(item_node_ids) - 1]:
-            break
-        idx_next = idx - 1 if mode == "start" else idx + 1
-        fname_next = item_node_ids[idx_next].split("::")[0]
-        if fname_next == fname:
-            idx = idx_next
-        else:
-            same_notebook = False
-    return idx if mode == "start" else idx + 1  # since Python indexing is [a, b)
+    fpath = ipynb_node_id.split("::")[0]
+    ipynb_ids = [i for i, item in enumerate(item_node_ids) if fpath in item]
+    return ipynb_ids[0] if mode == "start" else ipynb_ids[-1]
