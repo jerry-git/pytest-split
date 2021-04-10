@@ -136,21 +136,22 @@ def _calculate_suite_start_and_end_idx(splits, group, items, stored_durations):
 
     # Modify start_idx and end_idx so they match start/end of an ipynb file
     if _is_ipy_notebook(item_node_ids[start_idx]):
-        start_idx = _get_boundary_idx(item_node_ids, start_idx, "start")
+        start_idx = _get_boundary_idx(item_node_ids, start_idx)[0]
     if _is_ipy_notebook(item_node_ids[end_idx - 1]):  # since Python indexing is [a, b)
-        end_idx = _get_boundary_idx(item_node_ids, end_idx - 1, "end")
+        end_idx = _get_boundary_idx(item_node_ids, end_idx - 1)[1]
 
     return start_idx, end_idx
 
 
 def _is_ipy_notebook(node_id):
+    r"""Returns True if node_id is an IPython notebook, otherwise False."""
     fpath = node_id.split("::")[0]
-    return True if fpath.endswith(".ipynb") else False
+    return fpath.endswith(".ipynb")
 
 
-def _get_boundary_idx(item_node_ids, idx, mode):
-    assert mode in ["start", "end"]
+def _get_boundary_idx(item_node_ids, idx):
+    r"""Returns the start and end indices of the node_id at the given index"""
     ipynb_node_id = item_node_ids[idx]
     fpath = ipynb_node_id.split("::")[0]
     ipynb_ids = [i for i, item in enumerate(item_node_ids) if fpath in item]
-    return ipynb_ids[0] if mode == "start" else ipynb_ids[-1]
+    return [ipynb_ids[0], ipynb_ids[-1]]
