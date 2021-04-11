@@ -154,4 +154,4 @@ def _get_boundary_idx(item_node_ids, idx):
     ipynb_node_id = item_node_ids[idx]
     fpath = ipynb_node_id.split("::")[0]
     ipynb_ids = [i for i, item in enumerate(item_node_ids) if fpath in item]
-    return [ipynb_ids[0], ipynb_ids[-1]]
+    return [ipynb_ids[0], ipynb_ids[-1] + 1]  # since Python indexing is [a, b)
