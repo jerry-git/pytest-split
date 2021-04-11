@@ -5,7 +5,7 @@ with open("README.md", "r") as readme_file:
     long_description = readme_file.read()
 
 
-tests_require = ["pytest", "pytest-cov", "pre-commit"]
+tests_require = ["pytest", "pytest-cov", "pre-commit", "nbval"]
 
 
 setuptools.setup(
