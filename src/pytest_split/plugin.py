@@ -134,12 +134,20 @@ def _calculate_suite_start_and_end_idx(splits, group, items, stored_durations):
     if not end_idx:
         end_idx = len(items)
 
-    # Modify start_idx and end_idx so they match start/end of an ipynb file
-    if _is_ipy_notebook(item_node_ids[start_idx]):
-        start_idx = _get_boundary_idx(item_node_ids, start_idx)[0]
-    if _is_ipy_notebook(item_node_ids[end_idx - 1]):  # since Python indexing is [a, b)
-        end_idx = _get_boundary_idx(item_node_ids, end_idx - 1)[1]
+    start_idx, end_idx = _fix_ipynb_split_indices(items, start_idx, end_idx)
 
+    return start_idx, end_idx
+
+
+def _fix_ipynb_split_indices(items, start_idx, end_idx):
+    r"""Forces start/end indices to match start/end of the IPy notebook."""
+    item_node_ids = [item.nodeid for item in items]
+    if _is_ipy_notebook(item_node_ids[start_idx]):
+        i, j = _get_boundary_indices(item_node_ids, start_idx)
+        start_idx = j if start_idx > i else start_idx
+    if _is_ipy_notebook(item_node_ids[end_idx - 1]):  # since Python indexing is [a, b)
+        i, j = _get_boundary_indices(item_node_ids, end_idx - 1)
+        end_idx = j if end_idx < j else end_idx
     return start_idx, end_idx
 
 
@@ -149,7 +157,7 @@ def _is_ipy_notebook(node_id):
     return fpath.endswith(".ipynb")
 
 
-def _get_boundary_idx(item_node_ids, idx):
+def _get_boundary_indices(item_node_ids, idx):
     r"""Returns the start and end indices of the node_id at the given index"""
     ipynb_node_id = item_node_ids[idx]
     fpath = ipynb_node_id.split("::")[0]
