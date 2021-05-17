@@ -43,69 +43,73 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collection_modifyitems(session, config, items):
-    splits = config.option.splits
-    group = config.option.group
-    store_durations = config.option.store_durations
-    durations_report_path = config.option.durations_path
+class SplitPlugin:
+    def pytest_collection_modifyitems(self, session, config, items):
+        splits = config.option.splits
+        group = config.option.group
+        store_durations = config.option.store_durations
+        durations_report_path = config.option.durations_path
 
-    if any((splits, group)):
-        if not all((splits, group)):
-            return
-        if not os.path.isfile(durations_report_path):
-            return
-        if store_durations:
-            # Don't split if we are storing durations
-            return
-    total_tests_count = len(items)
-    if splits and group:
-        with open(durations_report_path) as f:
-            stored_durations = OrderedDict(json.load(f))
+        if any((splits, group)):
+            if not all((splits, group)):
+                return
+            if not os.path.isfile(durations_report_path):
+                return
+            if store_durations:
+                # Don't split if we are storing durations
+                return
+        total_tests_count = len(items)
+        if splits and group:
+            with open(durations_report_path) as f:
+                stored_durations = OrderedDict(json.load(f))
 
-        start_idx, end_idx = _calculate_suite_start_and_end_idx(
-            splits, group, items, stored_durations
-        )
-        items[:] = items[start_idx:end_idx]
-
-        terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
-        terminal_writer = create_terminal_writer(config)
-        message = terminal_writer.markup(
-            " Running group {}/{} ({}/{} tests)\n".format(
-                group, splits, len(items), total_tests_count
+            start_idx, end_idx = _calculate_suite_start_and_end_idx(
+                splits, group, items, stored_durations
             )
-        )
-        terminal_reporter.write(message)
+            items[:] = items[start_idx:end_idx]
+
+            terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
+            terminal_writer = create_terminal_writer(config)
+            message = terminal_writer.markup(
+                " Running group {}/{} ({}/{} tests)\n".format(
+                    group, splits, len(items), total_tests_count
+                )
+            )
+            terminal_reporter.write(message)
+
+    def pytest_sessionfinish(self, session, exitstatus):
+        if session.config.option.store_durations:
+            report_path = session.config.option.durations_path
+            terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+            durations = defaultdict(float)
+            for test_reports in terminal_reporter.stats.values():
+                for test_report in test_reports:
+                    if hasattr(test_report, "duration"):
+                        stage = getattr(test_report, "when", "")
+                        duration = test_report.duration
+                        # These ifs be removed after this is solved: https://github.com/spulec/freezegun/issues/286
+                        if duration < 0:
+                            continue
+                        if (
+                            stage in ("teardown", "setup")
+                            and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
+                        ):
+                            # Ignore not legit teardown durations
+                            continue
+                        durations[test_report.nodeid] += test_report.duration
+
+            with open(report_path, "w") as f:
+                f.write(json.dumps(list(durations.items()), indent=2))
+
+            terminal_writer = create_terminal_writer(session.config)
+            message = terminal_writer.markup(
+                " Stored test durations in {}\n".format(report_path)
+            )
+            terminal_reporter.write(message)
 
 
-def pytest_sessionfinish(session, exitstatus):
-    if session.config.option.store_durations:
-        report_path = session.config.option.durations_path
-        terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-        durations = defaultdict(float)
-        for test_reports in terminal_reporter.stats.values():
-            for test_report in test_reports:
-                if hasattr(test_report, "duration"):
-                    stage = getattr(test_report, "when", "")
-                    duration = test_report.duration
-                    # These ifs be removed after this is solved: https://github.com/spulec/freezegun/issues/286
-                    if duration < 0:
-                        continue
-                    if (
-                        stage in ("teardown", "setup")
-                        and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
-                    ):
-                        # Ignore not legit teardown durations
-                        continue
-                    durations[test_report.nodeid] += test_report.duration
-
-        with open(report_path, "w") as f:
-            f.write(json.dumps(list(durations.items()), indent=2))
-
-        terminal_writer = create_terminal_writer(session.config)
-        message = terminal_writer.markup(
-            " Stored test durations in {}\n".format(report_path)
-        )
-        terminal_reporter.write(message)
+def pytest_configure(config):
+    config.pluginmanager.register(SplitPlugin())
 
 
 def _calculate_suite_start_and_end_idx(splits, group, items, stored_durations):
