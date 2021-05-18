@@ -220,7 +220,48 @@ class TestHasExpectedOutput:
         assert result.ret == 0
 
         outerr = capsys.readouterr()
-        assert "Running group 1/1 (10/10) tests" in outerr.out
+        assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
+
+    def test_prints_splitting_summary_when_group_missing(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "1")
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Not splitting tests because the `group` argument is missing" in outerr.out
+
+    def test_prints_splitting_summary_when_splits_missing(self, example_suite, capsys):
+        result = example_suite.inline_run("--group", "1")
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Not splitting tests because the `splits` argument is missing" in outerr.out
+
+    def test_prints_splitting_summary_when_splits_missing(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", 1, "--group", "1")
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Not splitting tests because the durations_report is missing" in outerr.out
+
+    def test_prints_splitting_summary_when_durations_missing(self, example_suite, capsys, durations_path):
+        test_name = "test_prints_splitting_summary_when_durations_missing"
+        with open(durations_path, "w") as f:
+            json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
+
+        result = example_suite.inline_run(
+            "--splits", 1, "--group", "1", "--durations-path", durations_path, "--store-durations"
+        )
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Not splitting tests because we are storing durations" in outerr.out
+
+    def test_prints_splitting_summary_when_no_pytest_split_arguments(self, example_suite, capsys):
+        result = example_suite.inline_run()
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
 
 
 def _passed_test_names(result):

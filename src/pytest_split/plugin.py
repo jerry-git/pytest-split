@@ -1,11 +1,15 @@
 import json
 import os
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, namedtuple
+from typing import List
 
 from _pytest.config import create_terminal_writer
 
 # Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+
+TestGroup = namedtuple("TestGroup", "index, num_tests")
+TestSuite = namedtuple("TestSuite", "splits, num_tests")
 
 
 def pytest_addoption(parser):
@@ -45,14 +49,23 @@ def pytest_addoption(parser):
 
 class SplitPlugin:
     def __init__(self):
-        self._suite_num_tests: int
-        self._group_num_tests: int
+        self._suite: TestSuite
+        self._group: TestGroup
+        self._messages: List[str] = []
 
     def pytest_report_collectionfinish(self, config):
-        return (
-            f"Running group {config.option.group}/{config.option.splits}"
-            f" ({self._group_num_tests}/{self._suite_num_tests}) tests"
+        lines = []
+        if self._messages:
+            lines += self._messages
+        lines.append(
+            f"Running group {self._group.index}/{self._suite.splits}"
+            f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
         )
+
+        prefix = "[pytest-split]"
+        lines = [f"{prefix} {m}" for m in lines]
+
+        return lines
 
     def pytest_collection_modifyitems(self, session, config, items):
         splits = config.option.splits
@@ -60,21 +73,26 @@ class SplitPlugin:
         store_durations = config.option.store_durations
         durations_report_path = config.option.durations_path
 
-        self._suite_num_tests = len(items)
+        self._suite = TestSuite(splits if splits is not None else 1, len(items))
 
         if any((splits, group)):
-            if not all((splits, group)):
-                self._group_num_tests = self._suite_num_tests
+            if not group:
+                self._messages.append("Not splitting tests because the `group` argument is missing")
+                self._group = TestGroup(1, self._suite.num_tests)
+                return
+            if not splits:
+                self._messages.append("Not splitting tests because the `splits` argument is missing")
+                self._group = TestGroup(1, self._suite.num_tests)
                 return
             if not os.path.isfile(durations_report_path):
-                self._group_num_tests = self._suite_num_tests
+                self._messages.append("Not splitting tests because the durations_report is missing")
+                self._group = TestGroup(1, self._suite.num_tests)
                 return
             if store_durations:
                 # Don't split if we are storing durations
-                self._group_num_tests = self._suite_num_tests
+                self._messages.append("Not splitting tests because we are storing durations")
+                self._group = TestGroup(1, self._suite.num_tests)
                 return
-
-        self._group_num_tests = self._suite_num_tests
 
         if splits and group:
             with open(durations_report_path) as f:
@@ -83,8 +101,10 @@ class SplitPlugin:
             start_idx, end_idx = _calculate_suite_start_and_end_idx(
                 splits, group, items, stored_durations
             )
-            self._group_num_tests = end_idx - start_idx
+            self._group = TestGroup(group, self._suite.num_tests)
             items[:] = items[start_idx:end_idx]
+        else:
+            self._group = TestGroup(1, self._suite.num_tests)
 
     def pytest_sessionfinish(self, session, exitstatus):
         if session.config.option.store_durations:
