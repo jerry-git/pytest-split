@@ -214,5 +214,14 @@ class TestSplitToSuites:
         ]
 
 
+class TestHasExpectedOutput:
+    def test_prints_splitting_summary(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "1", "--group", 1)
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "Running group 1/1 (10/10) tests" in outerr.out
+
+
 def _passed_test_names(result):
     return [passed.nodeid.split("::")[-1] for passed in result.listoutcomes()[0]]

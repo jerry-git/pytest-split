@@ -44,21 +44,38 @@ def pytest_addoption(parser):
 
 
 class SplitPlugin:
+    def __init__(self):
+        self._suite_num_tests: int
+        self._group_num_tests: int
+
+    def pytest_report_collectionfinish(self, config):
+        return (
+            f"Running group {config.option.group}/{config.option.splits}"
+            f" ({self._group_num_tests}/{self._suite_num_tests}) tests"
+        )
+
     def pytest_collection_modifyitems(self, session, config, items):
         splits = config.option.splits
         group = config.option.group
         store_durations = config.option.store_durations
         durations_report_path = config.option.durations_path
 
+        self._suite_num_tests = len(items)
+
         if any((splits, group)):
             if not all((splits, group)):
+                self._group_num_tests = self._suite_num_tests
                 return
             if not os.path.isfile(durations_report_path):
+                self._group_num_tests = self._suite_num_tests
                 return
             if store_durations:
                 # Don't split if we are storing durations
+                self._group_num_tests = self._suite_num_tests
                 return
-        total_tests_count = len(items)
+
+        self._group_num_tests = self._suite_num_tests
+
         if splits and group:
             with open(durations_report_path) as f:
                 stored_durations = OrderedDict(json.load(f))
@@ -66,16 +83,8 @@ class SplitPlugin:
             start_idx, end_idx = _calculate_suite_start_and_end_idx(
                 splits, group, items, stored_durations
             )
+            self._group_num_tests = end_idx - start_idx
             items[:] = items[start_idx:end_idx]
-
-            terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
-            terminal_writer = create_terminal_writer(config)
-            message = terminal_writer.markup(
-                " Running group {}/{} ({}/{} tests)\n".format(
-                    group, splits, len(items), total_tests_count
-                )
-            )
-            terminal_reporter.write(message)
 
     def pytest_sessionfinish(self, session, exitstatus):
         if session.config.option.store_durations:
