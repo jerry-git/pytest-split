@@ -10,36 +10,36 @@ STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
 
 def pytest_addoption(parser):
     group = parser.getgroup(
-        "Split tests into groups which execution time is about the same. "
-        "Run first the whole suite with --store-durations to save information "
-        "about test execution times"
+        'Split tests into groups which execution time is about the same. '
+        'Run first the whole suite with --store-durations to save information '
+        'about test execution times'
     )
     group.addoption(
-        "--store-durations",
-        dest="store_durations",
-        action="store_true",
+        '--store-durations',
+        dest='store_durations',
+        action='store_true',
         help="Store durations into '--durations-path'",
     )
     group.addoption(
-        "--durations-path",
-        dest="durations_path",
+        '--durations-path',
+        dest='durations_path',
         help=(
-            "Path to the file in which durations are (to be) stored, "
-            "default is .test_durations in the current working directory"
+            'Path to the file in which durations are (to be) stored, '
+            'default is .test_durations in the current working directory'
         ),
-        default=os.path.join(os.getcwd(), ".test_durations"),
+        default=os.path.join(os.getcwd(), '.test_durations'),
     )
     group.addoption(
-        "--splits",
-        dest="splits",
+        '--splits',
+        dest='splits',
         type=int,
-        help="The number of groups to split the tests into",
+        help='The number of groups to split the tests into',
     )
     group.addoption(
-        "--group",
-        dest="group",
+        '--group',
+        dest='group',
         type=int,
-        help="The group of tests that should be executed (first one is 1)",
+        help='The group of tests that should be executed (first one is 1)',
     )
 
 
@@ -62,17 +62,13 @@ def pytest_collection_modifyitems(session, config, items):
         with open(durations_report_path) as f:
             stored_durations = OrderedDict(json.load(f))
 
-        start_idx, end_idx = _calculate_suite_start_and_end_idx(
-            splits, group, items, stored_durations
-        )
+        start_idx, end_idx = _calculate_suite_start_and_end_idx(splits, group, items, stored_durations)
         items[:] = items[start_idx:end_idx]
 
-        terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
+        terminal_reporter = config.pluginmanager.get_plugin('terminalreporter')
         terminal_writer = create_terminal_writer(config)
         message = terminal_writer.markup(
-            " Running group {}/{} ({}/{} tests)\n".format(
-                group, splits, len(items), total_tests_count
-            )
+            ' Running group {}/{} ({}/{} tests)\n'.format(group, splits, len(items), total_tests_count)
         )
         terminal_reporter.write(message)
 
@@ -80,31 +76,26 @@ def pytest_collection_modifyitems(session, config, items):
 def pytest_sessionfinish(session, exitstatus):
     if session.config.option.store_durations:
         report_path = session.config.option.durations_path
-        terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        terminal_reporter = session.config.pluginmanager.get_plugin('terminalreporter')
         durations = defaultdict(float)
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:
-                if hasattr(test_report, "duration"):
-                    stage = getattr(test_report, "when", "")
+                if hasattr(test_report, 'duration'):
+                    stage = getattr(test_report, 'when', '')
                     duration = test_report.duration
                     # These ifs be removed after this is solved: https://github.com/spulec/freezegun/issues/286
                     if duration < 0:
                         continue
-                    if (
-                        stage in ("teardown", "setup")
-                        and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
-                    ):
+                    if stage in ('teardown', 'setup') and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD:
                         # Ignore not legit teardown durations
                         continue
                     durations[test_report.nodeid] += test_report.duration
 
-        with open(report_path, "w") as f:
+        with open(report_path, 'w') as f:
             f.write(json.dumps(list(durations.items()), indent=2))
 
         terminal_writer = create_terminal_writer(session.config)
-        message = terminal_writer.markup(
-            " Stored test durations in {}\n".format(report_path)
-        )
+        message = terminal_writer.markup(' Stored test durations in {}\n'.format(report_path))
         terminal_reporter.write(message)
 
 

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/ambv/black
-    rev: stable
+    rev: 20.8b1
     hooks:
       - id: black
         args: ['--quiet']
@@ -12,9 +12,7 @@ repos:
           'flake8-bugbear',
           'flake8-comprehensions',
           'flake8-deprecated',
-          'flake8-use-fstring',
           'flake8-print',
-          'flake8-docstrings',
           'flake8-annotations',
           'flake8-type-checking',
         ]
