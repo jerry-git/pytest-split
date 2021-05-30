@@ -1,10 +1,36 @@
--   repo: https://github.com/ambv/black
+repos:
+  - repo: https://github.com/ambv/black
     rev: stable
     hooks:
-    - id: black
-      language_version: python3.7
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.4.0
+      - id: black
+        args: ['--quiet']
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
     hooks:
-    - id: debug-statements
-    - id: flake8
+      - id: flake8
+        additional_dependencies: [
+          'flake8-bugbear',
+          'flake8-comprehensions',
+          'flake8-deprecated',
+          'flake8-use-fstring',
+          'flake8-print',
+          'flake8-docstrings',
+          'flake8-annotations',
+          'flake8-type-checking',
+        ]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-ast
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-yaml
+      - id: debug-statements
+      - id: double-quote-string-fixer
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: trailing-whitespace
