@@ -28,6 +28,12 @@ def pytest_addoption(parser: "Parser") -> None:
         "about test execution times"
     )
     group.addoption(
+        "--store-durations",
+        dest="store_durations",
+        action="store_true",
+        help="Store durations into '--durations-path'",
+    )
+    group.addoption(
         "--splits",
         dest="splits",
         type=int,
@@ -65,11 +71,13 @@ def pytest_configure(config: "Config") -> None:
             "to run. Remove the `groups` argument or add a `splits` argument."
         )
     elif config.option.splits and config.option.group:
-        # Register plugin to run only if we received a splits and group arg
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
+        config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
+    elif config.option.store_durations:
+        config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
 
 
-class PytestSplitPlugin:
+class Base:
     cache_file = "cache/pytest-split"
 
     def __init__(self, config: "Config") -> None:
@@ -93,7 +101,10 @@ class PytestSplitPlugin:
                 "when test timings have been documented."
             )
 
-    @hookimpl(hookwrapper=True, tryfirst=True)
+
+class PytestSplitPlugin(Base):
+
+    @hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> Generator[None, None, None]:
         """
         Instruct Pytest to run the tests we've selected.
@@ -107,25 +118,21 @@ class PytestSplitPlugin:
         splits: int = config.option.splits
         group: int = config.option.group
 
-        total_tests_count = len(items)
-
         selected_tests, deselected_tests = self._split_tests(splits, group, items, self.cached_durations)
 
         items[:] = selected_tests
         config.hook.pytest_deselected(items=deselected_tests)
 
-        message = self.writer.markup(
-            " Running group {}/{} ({}/{} tests)\n".format(group, splits, len(items), total_tests_count)
-        )
+        message = self.writer.markup(f"Running group {group}/{splits}\n")
+        self.writer.line()
         self.writer.line(message)
-        yield
 
     @staticmethod
     def _split_tests(
-        splits: int,
-        group: int,
-        items: "List[nodes.Item]",
-        stored_durations: OrderedDict,
+            splits: int,
+            group: int,
+            items: "List[nodes.Item]",
+            stored_durations: OrderedDict,
     ) -> Tuple[int, int]:
         """
         Split tests by runtime.
@@ -201,6 +208,9 @@ class PytestSplitPlugin:
 
         return selected, deselected
 
+
+class PytestSplitCachePlugin(Base):
+
     def pytest_sessionfinish(self) -> None:
         """
         Write test runtimes to cache.
@@ -219,8 +229,8 @@ class PytestSplitPlugin:
                     if test_report.duration < 0:
                         continue
                     if (
-                        getattr(test_report, "when", "") in ("teardown", "setup")
-                        and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
+                            getattr(test_report, "when", "") in ("teardown", "setup")
+                            and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
                         continue
