@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: "Parser") -> None:
     group = parser.getgroup(
         "Split tests into groups which execution time is about the same. "
         "Run first the whole suite with --store-durations to save information "
@@ -53,8 +53,8 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 def pytest_collection_modifyitems(
-    config: Config, items: List[nodes.Item]
-) -> Generator[None, None, None]:
+    config: "Config", items: "List[nodes.Item]"
+) -> "Generator[None, None, None]":
     splits = config.option.splits
     group = config.option.group
     store_durations = config.option.store_durations
@@ -88,7 +88,7 @@ def pytest_collection_modifyitems(
         terminal_reporter.write(message)
 
 
-def pytest_sessionfinish(session: Session) -> None:
+def pytest_sessionfinish(session: "Session") -> None:
     if session.config.option.store_durations:
         report_path = session.config.option.durations_path
         terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
@@ -121,7 +121,7 @@ def pytest_sessionfinish(session: Session) -> None:
 
 
 def _calculate_suite_start_and_end_idx(
-    splits: int, group: int, items: List[nodes.Item], stored_durations: OrderedDict
+    splits: int, group: int, items: "List[nodes.Item]", stored_durations: OrderedDict
 ) -> Tuple[int, int]:
     item_node_ids = [item.nodeid for item in items]
     stored_durations = {k: v for k, v in stored_durations.items() if k in item_node_ids}

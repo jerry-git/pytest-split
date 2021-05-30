@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires=["pytest"],
     extras_require={"testing": tests_require},
     classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 4 - Beta"
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
@@ -32,6 +32,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Framework :: Pytest",
+        "Typing :: Typed",
     ],
     entry_points={"pytest11": ["pytest-split = pytest_split.plugin"]},
+    package_data={"pytest_split": ["py.typed"]},
 )
