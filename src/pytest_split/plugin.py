@@ -1,14 +1,14 @@
 import json
 import os
 from collections import defaultdict, OrderedDict
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 from _pytest.config import create_terminal_writer
-from _pytest.main import Session
 
 if TYPE_CHECKING:
-    from typing import Generator, List
+    from typing import List, Tuple
     from _pytest.config.argparsing import Parser
+    from _pytest.main import Session
 
     from _pytest import nodes
     from _pytest.config import Config
@@ -52,9 +52,7 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
-def pytest_collection_modifyitems(
-    config: "Config", items: "List[nodes.Item]"
-) -> "Generator[None, None, None]":
+def pytest_collection_modifyitems(config: "Config", items: "List[nodes.Item]") -> None:
     splits = config.option.splits
     group = config.option.group
     store_durations = config.option.store_durations
@@ -62,12 +60,12 @@ def pytest_collection_modifyitems(
 
     if any((splits, group)):
         if not all((splits, group)):
-            return
+            return None
         if not os.path.isfile(durations_report_path):
-            return
+            return None
         if store_durations:
             # Don't split if we are storing durations
-            return
+            return None
     total_tests_count = len(items)
     if splits and group:
         with open(durations_report_path) as f:
@@ -86,13 +84,14 @@ def pytest_collection_modifyitems(
             )
         )
         terminal_reporter.write(message)
+    return None
 
 
 def pytest_sessionfinish(session: "Session") -> None:
     if session.config.option.store_durations:
         report_path = session.config.option.durations_path
         terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-        durations = defaultdict(float)
+        durations: dict = defaultdict(float)
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:
                 if hasattr(test_report, "duration"):
@@ -124,7 +123,9 @@ def _calculate_suite_start_and_end_idx(
     splits: int, group: int, items: "List[nodes.Item]", stored_durations: OrderedDict
 ) -> Tuple[int, int]:
     item_node_ids = [item.nodeid for item in items]
-    stored_durations = {k: v for k, v in stored_durations.items() if k in item_node_ids}
+    stored_durations = OrderedDict(
+        {k: v for k, v in stored_durations.items() if k in item_node_ids}
+    )
     avg_duration_per_test = sum(stored_durations.values()) / len(stored_durations)
 
     durations = OrderedDict()
