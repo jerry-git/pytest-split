@@ -1,12 +1,12 @@
 import json
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Tuple, Generator
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from _pytest.config import create_terminal_writer, hookimpl
 
 if TYPE_CHECKING:
-    from typing import List
+    from typing import List, Tuple
 
     from _pytest import nodes
     from _pytest.config import Config
@@ -103,9 +103,8 @@ class Base:
 
 
 class PytestSplitPlugin(Base):
-
     @hookimpl(tryfirst=True)
-    def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> Generator[None, None, None]:
+    def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
         """
         Instruct Pytest to run the tests we've selected.
 
@@ -120,20 +119,21 @@ class PytestSplitPlugin(Base):
 
         selected_tests, deselected_tests = self._split_tests(splits, group, items, self.cached_durations)
 
-        items[:] = selected_tests
+        items[:] = selected_tests  # type: ignore
         config.hook.pytest_deselected(items=deselected_tests)
 
         message = self.writer.markup(f"Running group {group}/{splits}\n")
         self.writer.line()
         self.writer.line(message)
+        return None
 
     @staticmethod
     def _split_tests(
-            splits: int,
-            group: int,
-            items: "List[nodes.Item]",
-            stored_durations: OrderedDict,
-    ) -> Tuple[int, int]:
+        splits: int,
+        group: int,
+        items: "List[nodes.Item]",
+        stored_durations: OrderedDict,
+    ) -> "Tuple[list, list]":
         """
         Split tests by runtime.
 
@@ -210,7 +210,6 @@ class PytestSplitPlugin(Base):
 
 
 class PytestSplitCachePlugin(Base):
-
     def pytest_sessionfinish(self) -> None:
         """
         Write test runtimes to cache.
@@ -229,8 +228,8 @@ class PytestSplitCachePlugin(Base):
                     if test_report.duration < 0:
                         continue
                     if (
-                            getattr(test_report, "when", "") in ("teardown", "setup")
-                            and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
+                        getattr(test_report, "when", "") in ("teardown", "setup")
+                        and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
                         continue

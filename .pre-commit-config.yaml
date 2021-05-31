@@ -4,18 +4,6 @@ repos:
     hooks:
       - id: black
         args: ['--quiet']
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
-    hooks:
-      - id: flake8
-        additional_dependencies: [
-          'flake8-bugbear',
-          'flake8-comprehensions',
-          'flake8-deprecated',
-          'flake8-print',
-          'flake8-annotations',
-          'flake8-type-checking',
-        ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.4.0
     hooks:
@@ -31,3 +19,18 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
       - id: trailing-whitespace
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+        additional_dependencies: [
+            'flake8-bugbear',
+            'flake8-comprehensions',
+            'flake8-deprecated',
+            'flake8-print',
+            'flake8-type-checking',
+        ]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.812'
+    hooks:
+      - id: mypy
