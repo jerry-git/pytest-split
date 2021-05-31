@@ -121,7 +121,7 @@ def pytest_sessionfinish(session: "Session") -> None:
 
 def _calculate_suite_start_and_end_idx(
     splits: int, group: int, items: "List[nodes.Item]", stored_durations: OrderedDict
-) -> Tuple[int, int]:
+) -> "Tuple[int, int]":
     item_node_ids = [item.nodeid for item in items]
     stored_durations = OrderedDict(
         {k: v for k, v in stored_durations.items() if k in item_node_ids}

@@ -34,4 +34,3 @@ repos:
     rev: 'v0.812'
     hooks:
       - id: mypy
-        additional_dependencies: [django, djangorestframework, inflection, openapi-spec-validator, prance, pyYAML, django-stubs, djangorestframework-stubs, drf_yasg, drf-spectacular]
