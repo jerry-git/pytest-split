@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 
 import pytest
 
@@ -30,6 +31,34 @@ def durations_path(tmpdir):
     return str(tmpdir.join(".durations"))
 
 
+class TestStoreDurations:
+    def test_it_stores(self, example_suite, durations_path):
+        example_suite.runpytest("--store-durations", "--durations-path", durations_path)
+
+        with open(durations_path) as f:
+            durations = json.load(f)
+
+        assert list(durations.keys()) == [
+            "test_it_stores.py::test_1",
+            "test_it_stores.py::test_2",
+            "test_it_stores.py::test_3",
+            "test_it_stores.py::test_4",
+            "test_it_stores.py::test_5",
+            "test_it_stores.py::test_6",
+            "test_it_stores.py::test_7",
+            "test_it_stores.py::test_8",
+            "test_it_stores.py::test_9",
+            "test_it_stores.py::test_10",
+        ]
+
+        for duration in durations.values():
+            assert isinstance(duration, float)
+
+    def test_it_does_not_store_without_flag(self, example_suite, durations_path):
+        example_suite.runpytest("--durations-path", durations_path)
+        assert not os.path.exists(durations_path)
+
+
 class TestSplitToSuites:
     @pytest.mark.parametrize(
         "param_idx, splits, expected_tests_per_group",
@@ -37,39 +66,53 @@ class TestSplitToSuites:
             (
                 0,
                 1,
-                [["test_6", "test_7", "test_8", "test_9", "test_10", "test_1", "test_2", "test_3", "test_4", "test_5"]],
-            ),
-            (
-                1,
-                2,
                 [
-                    ["test_6", "test_7", "test_8", "test_1", "test_2"],  # 8 seconds
-                    ["test_9", "test_10", "test_3", "test_4", "test_5"],  # 7 seconds
+                    [
+                        "test_1",
+                        "test_2",
+                        "test_3",
+                        "test_4",
+                        "test_5",
+                        "test_6",
+                        "test_7",
+                        "test_8",
+                        "test_9",
+                        "test_10",
+                    ]
                 ],
             ),
-            (
-                2,
-                3,
-                [
-                    ["test_6", "test_7", "test_1", "test_2"],  # 6 seconds
-                    ["test_8", "test_9", "test_3", "test_4"],  # 6 seconds
-                    ["test_10", "test_5"],  # 3 seconds
-                ],
-            ),
-            (
-                3,
-                4,
-                [
-                    ["test_6", "test_1", "test_2"],  # 4 seconds
-                    ["test_7", "test_3", "test_4"],  # 4 seconds
-                    ["test_8", "test_5", "test_9"],  # 5 seconds
-                    ["test_10"],  # 2 second
-                ],
-            ),
+            # (
+            #     1,
+            #     2,
+            #     [
+            #         ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6"],
+            #         ["test_7", "test_8", "test_9", "test_10"],
+            #     ],
+            # ),
+            # (
+            #     2,
+            #     3,
+            #     [
+            #         ["test_1", "test_2", "test_3", "test_4", "test_5"],
+            #         ["test_6", "test_7"],
+            #         ["test_8", "test_9", "test_10"],
+            #     ],
+            # ),
+            # (
+            #     3,
+            #     4,
+            #     [
+            #         ["test_1", "test_2", "test_3"],
+            #         ["test_4", "test_5", "test_6"],
+            #         ["test_7", "test_8"],
+            #         ["test_9", "test_10"],
+            #     ],
+            # ),
         ],
     )
     def test_it_splits(self, param_idx, splits, expected_tests_per_group, example_suite, durations_path):
         assert len(list(itertools.chain(*expected_tests_per_group))) == 10
+
         durations = {
             "test_it_splits{}/test_it_splits.py::test_1".format(param_idx): 1,
             "test_it_splits{}/test_it_splits.py::test_2".format(param_idx): 1,
@@ -83,41 +126,39 @@ class TestSplitToSuites:
             "test_it_splits{}/test_it_splits.py::test_10".format(param_idx): 2,
         }
 
-        results = []
-        for group in range(splits):
-            with open(durations_path, "w") as f:
-                f.write(json.dumps(durations))
-            results.append(
-                example_suite.inline_run(
-                    "--splits",
-                    str(splits),
-                    "--group",
-                    str(group + 1),
-                    "--durations-path",
-                    durations_path,
-                )
-            )
+        with open(durations_path, "w") as f:
+            json.dump(durations, f)
 
+        results = [
+            example_suite.inline_run(
+                "--splits",
+                str(splits),
+                "--group",
+                str(group + 1),
+                "--durations-path",
+                durations_path,
+            )
+            for group in range(splits)
+        ]
         for result, expected_tests in zip(results, expected_tests_per_group):
             result.assertoutcome(passed=len(expected_tests))
             assert _passed_test_names(result) == expected_tests
 
     def test_it_does_not_split_with_invalid_args(self, example_suite, durations_path):
         durations = {"test_it_does_not_split_with_invalid_args.py::test_1": 1}
-
         with open(durations_path, "w") as f:
-            f.write(json.dumps(durations))
+            json.dump(durations, f)
 
         # Plugin doesn't run when splits is passed but group is missing
-        result = example_suite.inline_run("--splits", "2")
+        result = example_suite.inline_run("--splits", "2", "--durations-path", durations_path)  # no --group
         result.assertoutcome(passed=10)
 
         # Plugin doesn't run when group is passed but splits is missing
-        result = example_suite.inline_run("--group", "2")
+        result = example_suite.inline_run("--group", "2", "--durations-path", durations_path)  # no --splits
         result.assertoutcome(passed=10)
 
         # Runs if they both are
-        result = example_suite.inline_run("--splits", "2", "--group", "1", "--durations-path", durations_path)
+        result = example_suite.inline_run("--splits", "2", "--group", "1")
         result.assertoutcome(passed=6)
 
     def test_it_adapts_splits_based_on_new_and_deleted_tests(self, example_suite, durations_path):
@@ -135,25 +176,23 @@ class TestSplitToSuites:
         }
 
         with open(durations_path, "w") as f:
-            f.write(json.dumps(durations))
+            json.dump(durations, f)
 
         result = example_suite.inline_run("--splits", "3", "--group", "1", "--durations-path", durations_path)
         result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_5", "test_6", "test_10", "test_1"]
-
-        with open(durations_path, "w") as f:
-            f.write(json.dumps(durations))
+        assert _passed_test_names(result) == ["test_1", "test_2", "test_3", "test_4"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "2", "--durations-path", durations_path)
-        result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_2", "test_3", "test_4", "test_7"]
-
-        with open(durations_path, "w") as f:
-            f.write(json.dumps(durations))
+        result.assertoutcome(passed=3)
+        assert _passed_test_names(result) == ["test_5", "test_6", "test_7"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "3", "--durations-path", durations_path)
-        result.assertoutcome(passed=2)
-        assert _passed_test_names(result) == ["test_8", "test_9"]
+        result.assertoutcome(passed=3)
+        assert _passed_test_names(result) == [
+            "test_8",
+            "test_9",
+            "test_10",
+        ]
 
 
 def _passed_test_names(result):

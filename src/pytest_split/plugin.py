@@ -1,6 +1,5 @@
 import json
 import os
-from collections import OrderedDict
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -88,22 +87,25 @@ class Base:
         self.config = config
         self.writer = create_terminal_writer(self.config)
 
-        self.writer.line("")
-        self.writer.line(f"Reading durations from {config.option.durations_path}")
-        with open(config.option.durations_path, "r") as f:
-            self.cached_durations = json.loads(f.read())
-
-        if not self.cached_durations:
-            self.writer.line()
-            self.writer.line(
-                "No test durations found. Pytest-split will "
-                "split tests evenly when no durations are found. "
-                "\nYou can expect better results in consequent runs, "
-                "when test timings have been documented."
-            )
+        try:
+            with open(config.option.durations_path, "r") as f:
+                self.cached_durations = json.loads(f.read())
+        except FileNotFoundError:
+            self.cached_durations = {}
 
 
 class PytestSplitPlugin(Base):
+    def __init__(self, config: "Config"):
+        super().__init__(config)
+        if not self.cached_durations:
+            message = self.writer.markup(
+                "\nNo test durations found. Pytest-split will "
+                "split tests evenly when no durations are found. "
+                "\nYou can expect better results in consequent runs, "
+                "when test timings have been documented.\n"
+            )
+            self.writer.line(message)
+
     @hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
         """
@@ -123,8 +125,7 @@ class PytestSplitPlugin(Base):
         items[:] = selected_tests  # type: ignore
         config.hook.pytest_deselected(items=deselected_tests)
 
-        message = self.writer.markup(f"Running group {group}/{splits}\n")
-        self.writer.line()
+        message = self.writer.markup(f"\n\nRunning group {group}/{splits}\n")
         self.writer.line(message)
         return None
 
@@ -133,7 +134,7 @@ class PytestSplitPlugin(Base):
         splits: int,
         group: int,
         items: "List[nodes.Item]",
-        stored_durations: OrderedDict,
+        stored_durations: dict,
     ) -> "Tuple[list, list]":
         """
         Split tests by runtime.
@@ -161,46 +162,29 @@ class PytestSplitPlugin(Base):
             The first list represents the tests we want to run,
             while the other represents the tests we want to deselect.
         """
-        # Filter down stored durations to only relevant tests durations -
-        # this way the average duration per test is calculated on relevant tests only
-        test_names = [item.nodeid for item in items]
-        durations = {k: v for k, v in stored_durations.items() if k in test_names}
+        # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
+        test_ids = [item.nodeid for item in items]
+        durations = {k: v for k, v in stored_durations.items() if k in test_ids}
 
-        # Get the average duration for each test not in the cache
         if durations:
             avg_duration_per_test = sum(durations.values()) / len(durations)
         else:
-            # If there are no durations, we give every test the same assumed arbitrary value
+            # If there are no durations, give every test the same arbitrary value
             avg_duration_per_test = 1
 
-        # Create a dict of test-name: runtime
         tests_and_durations = {item: durations.get(item.nodeid, avg_duration_per_test) for item in items}
-
-        # Set the threshold runtime value per group
         time_per_group = sum(tests_and_durations.values()) / splits
-
-        # Order the dict so the slowest tests appear first
-        sorted_tests_and_durations = OrderedDict(sorted(tests_and_durations.items(), key=lambda x: x[1], reverse=True))
-
         selected, deselected = [], []
 
-        # Finally, we split tests equally between groups
         for _group in range(1, splits + 1):
             group_tests, group_runtime = [], 0
 
-            # Add slow tests up until *one more test would cross the threshold*
-            for item in OrderedDict(sorted_tests_and_durations):
-                if group_runtime + sorted_tests_and_durations[item] > time_per_group:
-                    break
-                group_tests.append(item)
-                group_runtime += sorted_tests_and_durations.pop(item)
-
-            # Add fast tests until *we do cross the threshold*
-            for item in OrderedDict(sorted(sorted_tests_and_durations.items(), key=lambda x: x[1], reverse=False)):
+            for item in dict(tests_and_durations):
                 if group_runtime > time_per_group:
                     break
+
                 group_tests.append(item)
-                group_runtime += sorted_tests_and_durations.pop(item)
+                group_runtime += tests_and_durations.pop(item)
 
             if _group == group:
                 selected = group_tests
@@ -246,7 +230,7 @@ class PytestSplitCachePlugin(Base):
 
         # Save durations
         with open(self.config.option.durations_path, "w") as f:
-            f.write(json.dumps(self.cached_durations))
+            json.dump(self.cached_durations, f)
 
-        message = self.writer.markup(" Stored test durations in {}\n".format(self.config.option.durations_path))
+        message = self.writer.markup("\n\nStored test durations in {}\n".format(self.config.option.durations_path))
         self.writer.line(message)
