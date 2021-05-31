@@ -7,7 +7,7 @@
 Pytest plugin which splits the test suite to equally sized "sub suites" based on test execution time.
 
 ## Motivation
-* Splitting the test suite is a prerequisite for parallelization (who does not want faster CI builds?). It's valuable to have sub suites which execution time is around the same.  
+* Splitting the test suite is a prerequisite for parallelization (who does not want faster CI builds?). It's valuable to have sub suites which execution time is around the same.
 * [`pytest-test-groups`](https://pypi.org/project/pytest-test-groups/) is great but it does not take into account the execution time of sub suites which can lead to notably unbalanced execution times between the sub suites.
 * [`pytest-xdist`](https://pypi.org/project/pytest-xdist/) is great but it's not suitable for all use cases.
 For example, some test suites may be fragile considering the order in which the tests are executed.
@@ -21,7 +21,7 @@ pip install pytest-split
 
 ## Usage
 First we have to store test durations from a complete test suite run.
-This produces .test_durations file which should be stored in the repo in order to have it available during future test runs. 
+This produces .test_durations file which should be stored in the repo in order to have it available during future test runs.
 The file path is configurable via `--durations-path` CLI option.
 ```
 pytest --store-durations

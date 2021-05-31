@@ -1,0 +1,49 @@
+name: test
+
+on:
+  pull_request_target:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pre-commit
+          key: ${{ runner.os }}-pip-2
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - run: python -m pip install pre-commit
+      - run: pre-commit run --all-files
+  test:
+    needs: linting
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.6", "3.7", "3.8", "3.9", ]  # "3.10.0-beta.1"
+        pytest-version: [ "4", "5", "6" ]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Pytest ${{ matrix.pytest-version }}
+        run: pip install pytest==${{ matrix.pytest-version }}
+      - name: Install package
+        run: pip install -e .
+      - name: Run tests
+        run: pytest --verbose --assert=plain
