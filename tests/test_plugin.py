@@ -9,20 +9,7 @@ pytest_plugins = ["pytester"]
 
 @pytest.fixture
 def example_suite(testdir):
-    testdir.makepyfile(
-        """
-    def test_1(): pass
-    def test_2(): pass
-    def test_3(): pass
-    def test_4(): pass
-    def test_5(): pass
-    def test_6(): pass
-    def test_7(): pass
-    def test_8(): pass
-    def test_9(): pass
-    def test_10(): pass
-    """
-    )
+    testdir.makepyfile("".join(f"def test_{num}(): pass\n" for num in range(1, 11)))
     yield testdir
 
 
@@ -81,33 +68,33 @@ class TestSplitToSuites:
                     ]
                 ],
             ),
-            # (
-            #     1,
-            #     2,
-            #     [
-            #         ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6"],
-            #         ["test_7", "test_8", "test_9", "test_10"],
-            #     ],
-            # ),
-            # (
-            #     2,
-            #     3,
-            #     [
-            #         ["test_1", "test_2", "test_3", "test_4", "test_5"],
-            #         ["test_6", "test_7"],
-            #         ["test_8", "test_9", "test_10"],
-            #     ],
-            # ),
-            # (
-            #     3,
-            #     4,
-            #     [
-            #         ["test_1", "test_2", "test_3"],
-            #         ["test_4", "test_5", "test_6"],
-            #         ["test_7", "test_8"],
-            #         ["test_9", "test_10"],
-            #     ],
-            # ),
+            (
+                1,
+                2,
+                [
+                    ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7"],
+                    ["test_8", "test_9", "test_10"],
+                ],
+            ),
+            (
+                2,
+                3,
+                [
+                    ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6"],
+                    ["test_7", "test_8", "test_9"],
+                    ["test_10"],
+                ],
+            ),
+            (
+                3,
+                4,
+                [
+                    ["test_1", "test_2", "test_3", "test_4"],
+                    ["test_5", "test_6", "test_7"],
+                    ["test_8", "test_9"],
+                    ["test_10"],
+                ],
+            ),
         ],
     )
     def test_it_splits(self, param_idx, splits, expected_tests_per_group, example_suite, durations_path):
@@ -140,6 +127,7 @@ class TestSplitToSuites:
             )
             for group in range(splits)
         ]
+
         for result, expected_tests in zip(results, expected_tests_per_group):
             result.assertoutcome(passed=len(expected_tests))
             assert _passed_test_names(result) == expected_tests

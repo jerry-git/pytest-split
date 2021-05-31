@@ -78,8 +78,6 @@ def pytest_configure(config: "Config") -> None:
 
 
 class Base:
-    cache_file = "cache/pytest-split"
-
     def __init__(self, config: "Config") -> None:
         """
         Load cache and configure plugin.
@@ -116,17 +114,15 @@ class PytestSplitPlugin(Base):
 
         See https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L670.
         """
-        # Load plugin arguments
         splits: int = config.option.splits
         group: int = config.option.group
 
         selected_tests, deselected_tests = self._split_tests(splits, group, items, self.cached_durations)
 
-        items[:] = selected_tests  # type: ignore
+        items[:] = selected_tests
         config.hook.pytest_deselected(items=deselected_tests)
 
-        message = self.writer.markup(f"\n\nRunning group {group}/{splits}\n")
-        self.writer.line(message)
+        self.writer.line(self.writer.markup(f"\n\nRunning group {group}/{splits}\n"))
         return None
 
     @staticmethod
@@ -137,21 +133,7 @@ class PytestSplitPlugin(Base):
         stored_durations: dict,
     ) -> "Tuple[list, list]":
         """
-        Split tests by runtime.
-
-        The splitting logic is very simple. We find out what our threshold runtime
-        is per group, then start adding tests (slowest tests ordered first) until we
-        get close to the threshold runtime per group. We then reverse the ordering and
-        add the fastest tests available until we go just *beyond* the threshold.
-
-        The choice we're making is to overload the first groups a little bit. The reason
-        this reasonable is that ci-providers like GHA will usually spin up the first
-        groups first, meaning that if you had a perfect test split, the first groups
-        would still finish first. The *overloading* is also minimal, so shouldn't
-        matter in most cases.
-
-        After assigning tests to each group we select the group we're in
-        and deselect all remaining tests.
+        Split tests into groups by runtime.
 
         :param splits: How many groups we're splitting in.
         :param group: Which group this run represents.
