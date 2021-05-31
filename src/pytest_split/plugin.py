@@ -1,4 +1,5 @@
 import json
+import os
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 from warnings import warn
@@ -34,6 +35,15 @@ def pytest_addoption(parser: "Parser") -> None:
         help="Store durations into '--durations-path'",
     )
     group.addoption(
+        "--durations-path",
+        dest="durations_path",
+        help=(
+            "Path to the file in which durations are (to be) stored, "
+            "default is .test_durations in the current working directory"
+        ),
+        default=os.path.join(os.getcwd(), ".test_durations"),
+    )
+    group.addoption(
         "--splits",
         dest="splits",
         type=int,
@@ -44,15 +54,6 @@ def pytest_addoption(parser: "Parser") -> None:
         dest="group",
         type=int,
         help="The group of tests that should be executed (first one is 1)",
-    )
-    group.addoption(
-        "--durations-path",
-        dest="durations_path",
-        help=(
-            "Path to the file in which durations are (to be) stored. "
-            f"By default, durations will be written to {CACHE_PATH}"
-        ),
-        default="",
     )
 
 
@@ -72,6 +73,7 @@ def pytest_configure(config: "Config") -> None:
         )
     elif config.option.splits and config.option.group:
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
+
     if config.option.store_durations:
         config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
 
@@ -84,13 +86,13 @@ class Base:
         Load cache and configure plugin.
         """
         self.config = config
-        if config.option.durations_path:
-            with open(config.option.durations_path, "r") as f:
-                self.cached_durations = json.loads(f.read())
-        else:
-            self.cached_durations = dict(config.cache.get(self.cache_file, {}))
-
         self.writer = create_terminal_writer(self.config)
+
+        self.writer.line("")
+        self.writer.line(f"Reading durations from {config.option.durations_path}")
+        with open(config.option.durations_path, "r") as f:
+            self.cached_durations = json.loads(f.read())
+
         if not self.cached_durations:
             self.writer.line()
             self.writer.line(
@@ -242,13 +244,9 @@ class PytestSplitCachePlugin(Base):
         for k, v in test_durations.items():
             self.cached_durations[k] = v
 
-        # Save to cache
-        self.config.cache.set(self.cache_file, self.cached_durations)
+        # Save durations
+        with open(self.config.option.durations_path, "w") as f:
+            f.write(json.dumps(self.cached_durations))
 
-        # Save to custom file if needed
-        if self.config.option.durations_path:
-            with open(self.config.option.durations_path, "w") as f:
-                f.write(json.dumps(self.cached_durations))
-
-            message = self.writer.markup(" Stored test durations in {}\n".format(self.config.option.durations_path))
-            self.writer.line(message)
+        message = self.writer.markup(" Stored test durations in {}\n".format(self.config.option.durations_path))
+        self.writer.line(message)

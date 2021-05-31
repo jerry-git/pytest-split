@@ -106,18 +106,18 @@ class TestSplitToSuites:
         durations = {"test_it_does_not_split_with_invalid_args.py::test_1": 1}
 
         with open(durations_path, "w") as f:
-            json.dump(durations, f)
+            f.write(json.dumps(durations))
 
         # Plugin doesn't run when splits is passed but group is missing
-        result = example_suite.inline_run("--splits", "2", "--durations-path", durations_path)  # no --group
+        result = example_suite.inline_run("--splits", "2")
         result.assertoutcome(passed=10)
 
         # Plugin doesn't run when group is passed but splits is missing
-        result = example_suite.inline_run("--group", "2", "--durations-path", durations_path)  # no --splits
+        result = example_suite.inline_run("--group", "2")
         result.assertoutcome(passed=10)
 
         # Runs if they both are
-        result = example_suite.inline_run("--splits", "2", "--group", "1")
+        result = example_suite.inline_run("--splits", "2", "--group", "1", "--durations-path", durations_path)
         result.assertoutcome(passed=6)
 
     def test_it_adapts_splits_based_on_new_and_deleted_tests(self, example_suite, durations_path):
