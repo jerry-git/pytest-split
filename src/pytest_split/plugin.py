@@ -72,8 +72,7 @@ def pytest_configure(config: "Config") -> None:
         )
     elif config.option.splits and config.option.group:
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
-        config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
-    elif config.option.store_durations:
+    if config.option.store_durations:
         config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
 
 
