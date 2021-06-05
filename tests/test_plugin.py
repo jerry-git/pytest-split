@@ -269,12 +269,12 @@ class TestHasExpectedOutput:
         outerr = capsys.readouterr()
         assert "[pytest-split] Not splitting tests because we are storing durations" in outerr.out
 
-    def test_prints_splitting_summary_when_no_pytest_split_arguments(self, example_suite, capsys):
+    def test_does_not_print_splitting_summary_when_no_pytest_split_arguments(self, example_suite, capsys):
         result = example_suite.inline_run()
         assert result.ret == 0
 
         outerr = capsys.readouterr()
-        assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
+        assert "[pytest-split]" not in outerr.out
 
 
 def _passed_test_names(result):

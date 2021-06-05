@@ -76,6 +76,9 @@ class SplitPlugin:
         self._messages: List[str] = []
 
     def pytest_report_collectionfinish(self, config):
+        if not hasattr(self, "_suite"):
+            return
+
         lines = []
         if self._messages:
             lines += self._messages
@@ -94,6 +97,10 @@ class SplitPlugin:
         group = config.option.group
         store_durations = config.option.store_durations
         durations_report_path = config.option.durations_path
+
+        if not any([group, splits, store_durations]):
+            # don't split unless explicitly requested
+            return
 
         self._suite = TestSuite(splits if splits is not None else 1, len(items))
 
