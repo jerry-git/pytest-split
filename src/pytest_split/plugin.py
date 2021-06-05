@@ -2,9 +2,17 @@ import json
 import pytest
 import os
 from collections import defaultdict, OrderedDict, namedtuple
-from typing import List
+from typing import TYPE_CHECKING
 
 from _pytest.config import create_terminal_writer
+
+if TYPE_CHECKING:
+    from typing import List, Tuple
+    from _pytest.config.argparsing import Parser
+    from _pytest.main import Session
+
+    from _pytest import nodes
+    from _pytest.config import Config
 
 # Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
@@ -13,7 +21,7 @@ TestGroup = namedtuple("TestGroup", "index, num_tests")
 TestSuite = namedtuple("TestSuite", "splits, num_tests")
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: "Parser") -> None:
     group = parser.getgroup(
         "Split tests into groups which execution time is about the same. "
         "Run first the whole suite with --store-durations to save information "
@@ -91,7 +99,7 @@ class SplitPlugin:
 
         return lines
 
-    def pytest_collection_modifyitems(self, session, config, items):
+    def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
         splits = config.option.splits
         group = config.option.group
         store_durations = config.option.store_durations
@@ -100,15 +108,15 @@ class SplitPlugin:
         if store_durations:
             if any((group, splits)):
                 self._messages.append("Not splitting tests because we are storing durations")
-            return
+            return None
 
         if not group and not splits:
             # don't split unless explicitly requested
-            return
+            return None
 
         if not os.path.isfile(durations_report_path):
             self._messages.append("Not splitting tests because the durations_report is missing")
-            return
+            return None
 
         with open(durations_report_path) as f:
             stored_durations = OrderedDict(json.load(f))
@@ -121,44 +129,50 @@ class SplitPlugin:
         self._group = TestGroup(group, end_idx-start_idx)
         items[:] = items[start_idx:end_idx]
 
-    def pytest_sessionfinish(self, session, exitstatus):
-        if session.config.option.store_durations:
-            report_path = session.config.option.durations_path
-            terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-            durations = defaultdict(float)
-            for test_reports in terminal_reporter.stats.values():
-                for test_report in test_reports:
-                    if hasattr(test_report, "duration"):
-                        stage = getattr(test_report, "when", "")
-                        duration = test_report.duration
-                        # These ifs be removed after this is solved: https://github.com/spulec/freezegun/issues/286
-                        if duration < 0:
-                            continue
-                        if (
-                            stage in ("teardown", "setup")
-                            and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
-                        ):
-                            # Ignore not legit teardown durations
-                            continue
-                        durations[test_report.nodeid] += test_report.duration
 
-            with open(report_path, "w") as f:
-                f.write(json.dumps(list(durations.items()), indent=2))
-
-            terminal_writer = create_terminal_writer(session.config)
-            message = terminal_writer.markup(
-                " Stored test durations in {}\n".format(report_path)
-            )
-            terminal_reporter.write(message)
-
-
-def pytest_configure(config):
+def pytest_configure(config: "Config") -> None:
     config.pluginmanager.register(SplitPlugin())
 
 
-def _calculate_suite_start_and_end_idx(splits, group, items, stored_durations):
+def pytest_sessionfinish(session: "Session") -> None:
+    if session.config.option.store_durations:
+        report_path = session.config.option.durations_path
+        terminal_reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        durations: dict = defaultdict(float)
+        for test_reports in terminal_reporter.stats.values():
+            for test_report in test_reports:
+                if hasattr(test_report, "duration"):
+                    stage = getattr(test_report, "when", "")
+                    duration = test_report.duration
+                    # These ifs be removed after this is solved:
+                    # https://github.com/spulec/freezegun/issues/286
+                    if duration < 0:
+                        continue
+                    if (
+                        stage in ("teardown", "setup")
+                        and duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
+                    ):
+                        # Ignore not legit teardown durations
+                        continue
+                    durations[test_report.nodeid] += test_report.duration
+
+        with open(report_path, "w") as f:
+            f.write(json.dumps(list(durations.items()), indent=2))
+
+        terminal_writer = create_terminal_writer(session.config)
+        message = terminal_writer.markup(
+            " Stored test durations in {}\n".format(report_path)
+        )
+        terminal_reporter.write(message)
+
+
+def _calculate_suite_start_and_end_idx(
+    splits: int, group: int, items: "List[nodes.Item]", stored_durations: OrderedDict
+) -> "Tuple[int, int]":
     item_node_ids = [item.nodeid for item in items]
-    stored_durations = {k: v for k, v in stored_durations.items() if k in item_node_ids}
+    stored_durations = OrderedDict(
+        {k: v for k, v in stored_durations.items() if k in item_node_ids}
+    )
     avg_duration_per_test = sum(stored_durations.values()) / len(stored_durations)
 
     durations = OrderedDict()
