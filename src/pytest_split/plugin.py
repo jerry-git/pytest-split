@@ -76,16 +76,15 @@ class SplitPlugin:
         self._messages: List[str] = []
 
     def pytest_report_collectionfinish(self, config):
-        if not hasattr(self, "_suite"):
-            return
-
         lines = []
         if self._messages:
             lines += self._messages
-        lines.append(
-            f"Running group {self._group.index}/{self._suite.splits}"
-            f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
-        )
+
+        if hasattr(self, "_suite"):
+            lines.append(
+                f"Running group {self._group.index}/{self._suite.splits}"
+                f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
+            )
 
         prefix = "[pytest-split]"
         lines = [f"{prefix} {m}" for m in lines]
@@ -98,34 +97,29 @@ class SplitPlugin:
         store_durations = config.option.store_durations
         durations_report_path = config.option.durations_path
 
-        if not any([group, splits, store_durations]):
+        if store_durations:
+            if any((group, splits)):
+                self._messages.append("Not splitting tests because we are storing durations")
+            return
+
+        if not group and not splits:
             # don't split unless explicitly requested
             return
 
-        self._suite = TestSuite(splits if splits is not None else 1, len(items))
+        if not os.path.isfile(durations_report_path):
+            self._messages.append("Not splitting tests because the durations_report is missing")
+            return
 
-        if any((splits, group)):
-            if not os.path.isfile(durations_report_path):
-                self._messages.append("Not splitting tests because the durations_report is missing")
-                self._group = TestGroup(1, self._suite.num_tests)
-                return
-            if store_durations:
-                # Don't split if we are storing durations
-                self._messages.append("Not splitting tests because we are storing durations")
-                self._group = TestGroup(1, self._suite.num_tests)
-                return
+        with open(durations_report_path) as f:
+            stored_durations = OrderedDict(json.load(f))
 
-        if splits and group:
-            with open(durations_report_path) as f:
-                stored_durations = OrderedDict(json.load(f))
+        start_idx, end_idx = _calculate_suite_start_and_end_idx(
+            splits, group, items, stored_durations
+        )
 
-            start_idx, end_idx = _calculate_suite_start_and_end_idx(
-                splits, group, items, stored_durations
-            )
-            self._group = TestGroup(group, self._suite.num_tests)
-            items[:] = items[start_idx:end_idx]
-        else:
-            self._group = TestGroup(1, self._suite.num_tests)
+        self._suite = TestSuite(splits, len(items))
+        self._group = TestGroup(group, end_idx-start_idx)
+        items[:] = items[start_idx:end_idx]
 
     def pytest_sessionfinish(self, session, exitstatus):
         if session.config.option.store_durations:
