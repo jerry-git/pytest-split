@@ -57,7 +57,7 @@ def pytest_addoption(parser: "Parser") -> None:
 
 
 @pytest.mark.tryfirst
-def pytest_cmdline_main(config):
+def pytest_cmdline_main(config: "Config") -> None:
     group = config.getoption("group")
     splits = config.getoption("splits")
 
@@ -83,7 +83,7 @@ class SplitPlugin:
         self._group: TestGroup
         self._messages: List[str] = []
 
-    def pytest_report_collectionfinish(self, config):
+    def pytest_report_collectionfinish(self, config: "Config") -> "List[str]":
         lines = []
         if self._messages:
             lines += self._messages
