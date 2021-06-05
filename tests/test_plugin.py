@@ -156,16 +156,6 @@ class TestSplitToSuites:
             json.dump(durations, f)
 
         result = example_suite.inline_run(
-            "--splits", "2", "--durations-path", durations_path
-        )  # no --group
-        result.assertoutcome(passed=10)
-
-        result = example_suite.inline_run(
-            "--group", "2", "--durations-path", durations_path
-        )  # no --splits
-        result.assertoutcome(passed=10)
-
-        result = example_suite.inline_run(
             "--splits", "2", "--group", "1"
         )  # no durations report in default location
         result.assertoutcome(passed=10)
@@ -214,6 +204,43 @@ class TestSplitToSuites:
         ]
 
 
+class TestRaisesUsageErrors:
+    def test_returns_nonzero_when_group_but_not_splits(self, example_suite, capsys):
+        result = example_suite.inline_run("--group", "1")
+        assert result.ret == 4
+
+        outerr = capsys.readouterr()
+        assert "argument `--splits` is required" in outerr.err
+
+    def test_returns_nonzero_when_splits_but_not_group(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "1")
+        assert result.ret == 4
+
+        outerr = capsys.readouterr()
+        assert "argument `--group` is required" in outerr.err
+
+    def test_returns_nonzero_when_group_below_one(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "3", "--group", 0)
+        assert result.ret == 4
+
+        outerr = capsys.readouterr()
+        assert "argument `--group` must be >= 1 and <= 3" in outerr.err
+
+    def test_returns_nonzero_when_group_larger_than_splits(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "3", "--group", 4)
+        assert result.ret == 4
+
+        outerr = capsys.readouterr()
+        assert "argument `--group` must be >= 1 and <= 3" in outerr.err
+
+    def test_returns_nonzero_when_splits_below_one(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "0", "--group", "1")
+        assert result.ret == 4
+
+        outerr = capsys.readouterr()
+        assert "argument `--splits` must be >= 1" in outerr.err
+
+
 class TestHasExpectedOutput:
     def test_prints_splitting_summary(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", "1", "--group", 1)
@@ -221,20 +248,6 @@ class TestHasExpectedOutput:
 
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
-
-    def test_prints_splitting_summary_when_group_missing(self, example_suite, capsys):
-        result = example_suite.inline_run("--splits", "1")
-        assert result.ret == 0
-
-        outerr = capsys.readouterr()
-        assert "[pytest-split] Not splitting tests because the `group` argument is missing" in outerr.out
-
-    def test_prints_splitting_summary_when_splits_missing(self, example_suite, capsys):
-        result = example_suite.inline_run("--group", "1")
-        assert result.ret == 0
-
-        outerr = capsys.readouterr()
-        assert "[pytest-split] Not splitting tests because the `splits` argument is missing" in outerr.out
 
     def test_prints_splitting_summary_when_splits_missing(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", 1, "--group", "1")

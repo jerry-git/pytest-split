@@ -1,4 +1,5 @@
 import json
+import pytest
 import os
 from collections import defaultdict, OrderedDict, namedtuple
 from typing import List
@@ -47,6 +48,27 @@ def pytest_addoption(parser):
     )
 
 
+@pytest.mark.tryfirst
+def pytest_cmdline_main(config):
+    group = config.getoption("group")
+    splits = config.getoption("splits")
+
+    if splits is None and group is None:
+        return
+
+    if splits and group is None:
+        raise pytest.UsageError("argument `--group` is required")
+
+    if group and splits is None:
+        raise pytest.UsageError("argument `--splits` is required")
+
+    if splits < 1:
+        raise pytest.UsageError("argument `--splits` must be >= 1")
+
+    if group < 1 or group > splits:
+        raise pytest.UsageError(f"argument `--group` must be >= 1 and <= {splits}")
+
+
 class SplitPlugin:
     def __init__(self):
         self._suite: TestSuite
@@ -76,14 +98,6 @@ class SplitPlugin:
         self._suite = TestSuite(splits if splits is not None else 1, len(items))
 
         if any((splits, group)):
-            if not group:
-                self._messages.append("Not splitting tests because the `group` argument is missing")
-                self._group = TestGroup(1, self._suite.num_tests)
-                return
-            if not splits:
-                self._messages.append("Not splitting tests because the `splits` argument is missing")
-                self._group = TestGroup(1, self._suite.num_tests)
-                return
             if not os.path.isfile(durations_report_path):
                 self._messages.append("Not splitting tests because the durations_report is missing")
                 self._group = TestGroup(1, self._suite.num_tests)
