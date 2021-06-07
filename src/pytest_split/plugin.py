@@ -81,7 +81,7 @@ class SplitPlugin:
     def __init__(self):
         self._suite: TestSuite
         self._group: TestGroup
-        self._messages: List[str] = []
+        self._messages: "List[str]" = []
 
     def pytest_report_collectionfinish(self, config: "Config") -> "List[str]":
         lines = []
@@ -99,7 +99,9 @@ class SplitPlugin:
 
         return lines
 
-    def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
+    def pytest_collection_modifyitems(
+        self, config: "Config", items: "List[nodes.Item]"
+    ) -> None:
         splits = config.option.splits
         group = config.option.group
         store_durations = config.option.store_durations
@@ -107,7 +109,9 @@ class SplitPlugin:
 
         if store_durations:
             if any((group, splits)):
-                self._messages.append("Not splitting tests because we are storing durations")
+                self._messages.append(
+                    "Not splitting tests because we are storing durations"
+                )
             return None
 
         if not group and not splits:
@@ -115,7 +119,9 @@ class SplitPlugin:
             return None
 
         if not os.path.isfile(durations_report_path):
-            self._messages.append("Not splitting tests because the durations_report is missing")
+            self._messages.append(
+                "Not splitting tests because the durations_report is missing"
+            )
             return None
 
         with open(durations_report_path) as f:
@@ -126,7 +132,7 @@ class SplitPlugin:
         )
 
         self._suite = TestSuite(splits, len(items))
-        self._group = TestGroup(group, end_idx-start_idx)
+        self._group = TestGroup(group, end_idx - start_idx)
         items[:] = items[start_idx:end_idx]
 
 
