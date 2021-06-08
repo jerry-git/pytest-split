@@ -1,6 +1,5 @@
 import json
 import os
-from collections import namedtuple
 from typing import TYPE_CHECKING
 
 import pytest
@@ -16,9 +15,6 @@ if TYPE_CHECKING:
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
-
-TestGroup = namedtuple("TestGroup", "index, num_tests")
-TestSuite = namedtuple("TestSuite", "splits, num_tests")
 
 
 def pytest_addoption(parser: "Parser") -> None:
@@ -67,7 +63,7 @@ def pytest_cmdline_main(config: "Config") -> "Optional[Union[int, ExitCode]]":
     splits = config.getoption("splits")
 
     if splits is None and group is None:
-        return 0
+        return None
 
     if splits and group is None:
         raise pytest.UsageError("argument `--group` is required")
@@ -98,7 +94,9 @@ def pytest_configure(config: "Config") -> None:
 class Base:
     def __init__(self, config: "Config") -> None:
         """
-        Load cache and configure plugin.
+        Load durations and set up a terminal writer.
+
+        This logic is shared for both the split- and cache plugin.
         """
         self.config = config
         self.writer = create_terminal_writer(self.config)
@@ -109,47 +107,32 @@ class Base:
         except FileNotFoundError:
             self.cached_durations = {}
 
+        # This code provides backwards compatibility after we switched
+        # from saving durations in a list-of-lists to a dict format
+        # Remove this when bumping to v1
+        if isinstance(self.cached_durations, list):
+            self.cached_durations = {test_name: duration for test_name, duration in self.cached_durations}
+
 
 class PytestSplitPlugin(Base):
     def __init__(self, config: "Config"):
         super().__init__(config)
-        self._suite: TestSuite
-        self._group: TestGroup
+
         self._messages: "List[str]" = []
+
         if not self.cached_durations:
             message = self.writer.markup(
-                "\nNo test durations found. Pytest-split will "
+                "\n[pytest-split] No test durations found. Pytest-split will "
                 "split tests evenly when no durations are found. "
-                "\nYou can expect better results in consequent runs, "
+                "\n[pytest-split] You can expect better results in consequent runs, "
                 "when test timings have been documented.\n"
             )
             self.writer.line(message)
 
-    def pytest_report_collectionfinish(self, config: "Config") -> "List[str]":
-        lines = []
-        if self._messages:
-            lines += self._messages
-
-        if hasattr(self, "_suite"):
-            lines.append(
-                f"Running group {self._group.index}/{self._suite.splits}"
-                f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
-            )
-
-        prefix = "[pytest-split]"
-        lines = [f"{prefix} {m}" for m in lines]
-
-        return lines
-
     @hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
         """
-        Instruct Pytest to run the tests we've selected.
-
-        This method is called by Pytest right after Pytest internals finishes
-        collecting tests.
-
-        See https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L670.
+        Collect and select the tests we want to run, and deselect the rest.
         """
         splits: int = config.option.splits
         group: int = config.option.group
@@ -159,10 +142,7 @@ class PytestSplitPlugin(Base):
         items[:] = selected_tests
         config.hook.pytest_deselected(items=deselected_tests)
 
-        self._suite = TestSuite(splits, len(items))
-        self._group = TestGroup(group, end_idx - start_idx)
-
-        self.writer.line(self.writer.markup(f"\n\nRunning group {group}/{splits}\n"))
+        self.writer.line(self.writer.markup(f"\n\n[pytest-split] Running group {group}/{splits}\n"))
         return None
 
     @staticmethod
@@ -256,5 +236,7 @@ class PytestSplitCachePlugin(Base):
         with open(self.config.option.durations_path, "w") as f:
             json.dump(self.cached_durations, f)
 
-        message = self.writer.markup("\n\nStored test durations in {}\n".format(self.config.option.durations_path))
+        message = self.writer.markup(
+            "\n\n[pytest-split] Stored test durations in {}".format(self.config.option.durations_path)
+        )
         self.writer.line(message)

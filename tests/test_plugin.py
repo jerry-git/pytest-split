@@ -3,6 +3,7 @@ import json
 import os
 
 import pytest
+from _pytest.config import ExitCode
 
 pytest_plugins = ["pytester"]
 
@@ -139,11 +140,11 @@ class TestSplitToSuites:
 
         # Plugin doesn't run when splits is passed but group is missing
         result = example_suite.inline_run("--splits", "2", "--durations-path", durations_path)  # no --group
-        result.assertoutcome(passed=10)
+        assert result.ret == ExitCode.USAGE_ERROR
 
         # Plugin doesn't run when group is passed but splits is missing
         result = example_suite.inline_run("--group", "2", "--durations-path", durations_path)  # no --splits
-        result.assertoutcome(passed=10)
+        assert result.ret == ExitCode.USAGE_ERROR
 
         # Runs if they both are
         result = example_suite.inline_run("--splits", "2", "--group", "1")
@@ -221,14 +222,6 @@ class TestRaisesUsageErrors:
 
 
 class TestHasExpectedOutput:
-    def test_does_not_print_splitting_summary_when_durations_missing(self, example_suite, capsys):
-        result = example_suite.inline_run("--splits", "1", "--group", "1")
-        assert result.ret == 0
-
-        outerr = capsys.readouterr()
-        assert "[pytest-split] Not splitting tests because the durations_report is missing" in outerr.out
-        assert "[pytest-split] Running group" not in outerr.out
-
     def test_prints_splitting_summary_when_durations_present(self, example_suite, capsys, durations_path):
         test_name = "test_prints_splitting_summary_when_durations_present"
         with open(durations_path, "w") as f:
@@ -237,26 +230,7 @@ class TestHasExpectedOutput:
         assert result.ret == 0
 
         outerr = capsys.readouterr()
-        assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
-
-    def test_prints_splitting_summary_when_storing_durations(self, example_suite, capsys, durations_path):
-        test_name = "test_prints_splitting_summary_when_storing_durations"
-        with open(durations_path, "w") as f:
-            json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
-
-        result = example_suite.inline_run(
-            "--splits",
-            "1",
-            "--group",
-            "1",
-            "--durations-path",
-            durations_path,
-            "--store-durations",
-        )
-        assert result.ret == 0
-
-        outerr = capsys.readouterr()
-        assert "[pytest-split] Not splitting tests because we are storing durations" in outerr.out
+        assert "[pytest-split] Running group 1/1" in outerr.out
 
     def test_does_not_print_splitting_summary_when_no_pytest_split_arguments(self, example_suite, capsys):
         result = example_suite.inline_run()
