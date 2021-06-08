@@ -1,18 +1,18 @@
 import json
-import pytest
 import os
-from collections import defaultdict, OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from typing import TYPE_CHECKING
 
+import pytest
 from _pytest.config import create_terminal_writer
 
 if TYPE_CHECKING:
     from typing import List, Tuple
-    from _pytest.config.argparsing import Parser
-    from _pytest.main import Session
 
     from _pytest import nodes
     from _pytest.config import Config
+    from _pytest.config.argparsing import Parser
+    from _pytest.main import Session
 
 # Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
