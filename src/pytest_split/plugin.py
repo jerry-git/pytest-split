@@ -1,37 +1,39 @@
 import json
 import os
+from collections import namedtuple
 from typing import TYPE_CHECKING
-from warnings import warn
 
+import pytest
 from _pytest.config import create_terminal_writer, hookimpl
+from _pytest.reports import TestReport
 
 if TYPE_CHECKING:
-    from typing import List, Tuple
+    from typing import List, Tuple, Optional, Union
 
     from _pytest import nodes
-    from _pytest.config import Config
+    from _pytest.config import Config, ExitCode
     from _pytest.config.argparsing import Parser
 
-# Ugly hacks for freezegun compatibility:
-# https://github.com/spulec/freezegun/issues/286
+# Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
-CACHE_PATH = ".pytest_cache/v/cache/pytest_split"
+
+TestGroup = namedtuple("TestGroup", "index, num_tests")
+TestSuite = namedtuple("TestSuite", "splits, num_tests")
 
 
 def pytest_addoption(parser: "Parser") -> None:
     """
-    Declare plugin options.
+    Declare pytest-split's options.
     """
     group = parser.getgroup(
         "Split tests into groups which execution time is about the same. "
-        "Run first the whole suite with --store-durations to save information "
-        "about test execution times"
+        "Run with --store-durations to store information about test execution times."
     )
     group.addoption(
         "--store-durations",
         dest="store_durations",
         action="store_true",
-        help="Store durations into '--durations-path'",
+        help="Store durations into '--durations-path'.",
     )
     group.addoption(
         "--durations-path",
@@ -56,21 +58,37 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
+@pytest.mark.tryfirst
+def pytest_cmdline_main(config: "Config") -> "Optional[Union[int, ExitCode]]":
+    """
+    Validate options.
+    """
+    group = config.getoption("group")
+    splits = config.getoption("splits")
+
+    if splits is None and group is None:
+        return 0
+
+    if splits and group is None:
+        raise pytest.UsageError("argument `--group` is required")
+
+    if group and splits is None:
+        raise pytest.UsageError("argument `--splits` is required")
+
+    if splits < 1:
+        raise pytest.UsageError("argument `--splits` must be >= 1")
+
+    if group < 1 or group > splits:
+        raise pytest.UsageError(f"argument `--group` must be >= 1 and <= {splits}")
+
+    return None
+
+
 def pytest_configure(config: "Config") -> None:
     """
-    Enable the plugin if appropriate arguments are passed.
+    Enable the plugins we need.
     """
-    if config.option.splits and not config.option.group:
-        warn(
-            "Both the `splits` and `group` arguments are required for pytest-split "
-            "to run. Remove the `splits` argument or add a `groups` argument."
-        )
-    elif config.option.group and not config.option.splits:
-        warn(
-            "Both the `splits` and `group` arguments are required for pytest-split "
-            "to run. Remove the `groups` argument or add a `splits` argument."
-        )
-    elif config.option.splits and config.option.group:
+    if config.option.splits and config.option.group:
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
 
     if config.option.store_durations:
@@ -95,6 +113,9 @@ class Base:
 class PytestSplitPlugin(Base):
     def __init__(self, config: "Config"):
         super().__init__(config)
+        self._suite: TestSuite
+        self._group: TestGroup
+        self._messages: "List[str]" = []
         if not self.cached_durations:
             message = self.writer.markup(
                 "\nNo test durations found. Pytest-split will "
@@ -103,6 +124,22 @@ class PytestSplitPlugin(Base):
                 "when test timings have been documented.\n"
             )
             self.writer.line(message)
+
+    def pytest_report_collectionfinish(self, config: "Config") -> "List[str]":
+        lines = []
+        if self._messages:
+            lines += self._messages
+
+        if hasattr(self, "_suite"):
+            lines.append(
+                f"Running group {self._group.index}/{self._suite.splits}"
+                f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
+            )
+
+        prefix = "[pytest-split]"
+        lines = [f"{prefix} {m}" for m in lines]
+
+        return lines
 
     @hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
@@ -121,6 +158,9 @@ class PytestSplitPlugin(Base):
 
         items[:] = selected_tests
         config.hook.pytest_deselected(items=deselected_tests)
+
+        self._suite = TestSuite(splits, len(items))
+        self._group = TestGroup(group, end_idx - start_idx)
 
         self.writer.line(self.writer.markup(f"\n\nRunning group {group}/{splits}\n"))
         return None
@@ -177,10 +217,12 @@ class PytestSplitPlugin(Base):
 
 
 class PytestSplitCachePlugin(Base):
+    """
+    The cache plugin writes durations to our durations file.
+    """
+
     def pytest_sessionfinish(self) -> None:
         """
-        Write test runtimes to cache.
-
         Method is called by Pytest after the test-suite has run.
         https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L308
         """
@@ -189,13 +231,13 @@ class PytestSplitCachePlugin(Base):
 
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:
-                if hasattr(test_report, "duration"):
-                    # These ifs be removed after this is solved:
-                    # https://github.com/spulec/freezegun/issues/286
+                if isinstance(test_report, TestReport):
+
+                    # These ifs be removed after this is solved: # https://github.com/spulec/freezegun/issues/286
                     if test_report.duration < 0:
                         continue
                     if (
-                        getattr(test_report, "when", "") in ("teardown", "setup")
+                        test_report.when in ("teardown", "setup")
                         and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
