@@ -38,7 +38,7 @@ build-backend = "poetry.core.masonry.api"
 pytest-split = "pytest_split.plugin"
 
 [tool.black]
-line-length = 88
+line-length = 120
 include = '\.pyi?$'
 
 [tool.coverage.run]
