@@ -220,14 +220,14 @@ class TestRaisesUsageErrors:
         assert "argument `--group` is required" in outerr.err
 
     def test_returns_nonzero_when_group_below_one(self, example_suite, capsys):
-        result = example_suite.inline_run("--splits", "3", "--group", 0)
+        result = example_suite.inline_run("--splits", "3", "--group", "0")
         assert result.ret == 4
 
         outerr = capsys.readouterr()
         assert "argument `--group` must be >= 1 and <= 3" in outerr.err
 
     def test_returns_nonzero_when_group_larger_than_splits(self, example_suite, capsys):
-        result = example_suite.inline_run("--splits", "3", "--group", 4)
+        result = example_suite.inline_run("--splits", "3", "--group", "4")
         assert result.ret == 4
 
         outerr = capsys.readouterr()
@@ -245,7 +245,7 @@ class TestHasExpectedOutput:
     def test_does_not_print_splitting_summary_when_durations_missing(
         self, example_suite, capsys
     ):
-        result = example_suite.inline_run("--splits", "1", "--group", 1)
+        result = example_suite.inline_run("--splits", "1", "--group", "1")
         assert result.ret == 0
 
         outerr = capsys.readouterr()
@@ -262,23 +262,23 @@ class TestHasExpectedOutput:
         with open(durations_path, "w") as f:
             json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
         result = example_suite.inline_run(
-            "--splits", "1", "--group", 1, "--durations-path", durations_path
+            "--splits", "1", "--group", "1", "--durations-path", durations_path
         )
         assert result.ret == 0
 
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/1 (10/10) tests" in outerr.out
 
-    def test_prints_splitting_summary_when_durations_missing(
+    def test_prints_splitting_summary_when_storing_durations(
         self, example_suite, capsys, durations_path
     ):
-        test_name = "test_prints_splitting_summary_when_durations_missing"
+        test_name = "test_prints_splitting_summary_when_storing_durations"
         with open(durations_path, "w") as f:
             json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
 
         result = example_suite.inline_run(
             "--splits",
-            1,
+            "1",
             "--group",
             "1",
             "--durations-path",
