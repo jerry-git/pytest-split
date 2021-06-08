@@ -53,14 +53,16 @@ jobs:
         id: cache-venv
         with:
           path: .venv
-          key: ${{ hashFiles('**/poetry.lock') }}-0
+          key: ${{ hashFiles('**/poetry.lock') }}-2
 
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
         if: steps.cache-venv.outputs.cache-hit != 'true'
 
       - name: Install Pytest
-        run: pip install pytest==${{ matrix.pytest-version }}
+        run: |
+          source .venv/bin/activate
+          pip install pytest==${{ matrix.pytest-version }}
 
       - name: Install package
         run: poetry install --no-interaction
@@ -68,4 +70,4 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          poetry run pytest --cov=src --verbose --assert=plain
+          pytest --cov=src --verbose --assert=plain
