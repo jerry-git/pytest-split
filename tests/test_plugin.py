@@ -3,7 +3,7 @@ import json
 import os
 
 import pytest
-from _pytest.config import ExitCode
+from _pytest.main import ExitCode
 
 pytest_plugins = ["pytester"]
 

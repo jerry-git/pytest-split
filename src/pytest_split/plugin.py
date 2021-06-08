@@ -10,7 +10,9 @@ if TYPE_CHECKING:
     from typing import List, Tuple, Optional, Union
 
     from _pytest import nodes
-    from _pytest.config import Config, ExitCode
+
+    from _pytest.main import ExitCode
+    from _pytest.config import Config
     from _pytest.config.argparsing import Parser
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
