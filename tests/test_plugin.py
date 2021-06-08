@@ -101,37 +101,37 @@ class TestSplitToSuites:
     def test_it_splits(self, param_idx, splits, expected_tests_per_group, example_suite, durations_path):
         assert len(list(itertools.chain(*expected_tests_per_group))) == 10
 
-        durations = {
-            "test_it_splits{}/test_it_splits.py::test_1".format(param_idx): 1,
-            "test_it_splits{}/test_it_splits.py::test_2".format(param_idx): 1,
-            "test_it_splits{}/test_it_splits.py::test_3".format(param_idx): 1,
-            "test_it_splits{}/test_it_splits.py::test_4".format(param_idx): 1,
-            "test_it_splits{}/test_it_splits.py::test_5".format(param_idx): 1,
-            "test_it_splits{}/test_it_splits.py::test_6".format(param_idx): 2,
-            "test_it_splits{}/test_it_splits.py::test_7".format(param_idx): 2,
-            "test_it_splits{}/test_it_splits.py::test_8".format(param_idx): 2,
-            "test_it_splits{}/test_it_splits.py::test_9".format(param_idx): 2,
-            "test_it_splits{}/test_it_splits.py::test_10".format(param_idx): 2,
-        }
+        for durations in [
+            # Legacy format - can be removed in v1
+            [
+                *[[f"test_it_splits{param_idx}/test_it_splits.py::test_{num}", 1] for num in range(1, 6)],
+                *[[f"test_it_splits{param_idx}/test_it_splits.py::test_{num}", 2] for num in range(6, 11)],
+            ],
+            # Current format
+            {
+                **{f"test_it_splits{param_idx}/test_it_splits.py::test_{num}": 1 for num in range(1, 6)},
+                **{f"test_it_splits{param_idx}/test_it_splits.py::test_{num}": 2 for num in range(6, 11)},
+            },
+        ]:
 
-        with open(durations_path, "w") as f:
-            json.dump(durations, f)
+            with open(durations_path, "w") as f:
+                json.dump(durations, f)
 
-        results = [
-            example_suite.inline_run(
-                "--splits",
-                str(splits),
-                "--group",
-                str(group + 1),
-                "--durations-path",
-                durations_path,
-            )
-            for group in range(splits)
-        ]
+            results = [
+                example_suite.inline_run(
+                    "--splits",
+                    str(splits),
+                    "--group",
+                    str(group + 1),
+                    "--durations-path",
+                    durations_path,
+                )
+                for group in range(splits)
+            ]
 
-        for result, expected_tests in zip(results, expected_tests_per_group):
-            result.assertoutcome(passed=len(expected_tests))
-            assert _passed_test_names(result) == expected_tests
+            for result, expected_tests in zip(results, expected_tests_per_group):
+                result.assertoutcome(passed=len(expected_tests))
+                assert _passed_test_names(result) == expected_tests
 
     def test_it_does_not_split_with_invalid_args(self, example_suite, durations_path):
         durations = {"test_it_does_not_split_with_invalid_args.py::test_1": 1}
