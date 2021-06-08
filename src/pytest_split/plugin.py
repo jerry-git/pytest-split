@@ -1,6 +1,7 @@
 import json
+import pytest
 import os
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, namedtuple
 from typing import TYPE_CHECKING
 
 from _pytest.config import create_terminal_writer
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
 
 # Ugly hacks for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+
+TestGroup = namedtuple("TestGroup", "index, num_tests")
+TestSuite = namedtuple("TestSuite", "splits, num_tests")
 
 
 def pytest_addoption(parser: "Parser") -> None:
@@ -52,39 +56,88 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
-def pytest_collection_modifyitems(config: "Config", items: "List[nodes.Item]") -> None:
-    splits = config.option.splits
-    group = config.option.group
-    store_durations = config.option.store_durations
-    durations_report_path = config.option.durations_path
+@pytest.mark.tryfirst
+def pytest_cmdline_main(config: "Config") -> None:
+    group = config.getoption("group")
+    splits = config.getoption("splits")
 
-    if any((splits, group)):
-        if not all((splits, group)):
-            return None
-        if not os.path.isfile(durations_report_path):
-            return None
+    if splits is None and group is None:
+        return
+
+    if splits and group is None:
+        raise pytest.UsageError("argument `--group` is required")
+
+    if group and splits is None:
+        raise pytest.UsageError("argument `--splits` is required")
+
+    if splits < 1:
+        raise pytest.UsageError("argument `--splits` must be >= 1")
+
+    if group < 1 or group > splits:
+        raise pytest.UsageError(f"argument `--group` must be >= 1 and <= {splits}")
+
+
+class SplitPlugin:
+    def __init__(self):
+        self._suite: TestSuite
+        self._group: TestGroup
+        self._messages: "List[str]" = []
+
+    def pytest_report_collectionfinish(self, config: "Config") -> "List[str]":
+        lines = []
+        if self._messages:
+            lines += self._messages
+
+        if hasattr(self, "_suite"):
+            lines.append(
+                f"Running group {self._group.index}/{self._suite.splits}"
+                f" ({self._group.num_tests}/{self._suite.num_tests}) tests"
+            )
+
+        prefix = "[pytest-split]"
+        lines = [f"{prefix} {m}" for m in lines]
+
+        return lines
+
+    def pytest_collection_modifyitems(
+        self, config: "Config", items: "List[nodes.Item]"
+    ) -> None:
+        splits = config.option.splits
+        group = config.option.group
+        store_durations = config.option.store_durations
+        durations_report_path = config.option.durations_path
+
         if store_durations:
-            # Don't split if we are storing durations
+            if any((group, splits)):
+                self._messages.append(
+                    "Not splitting tests because we are storing durations"
+                )
             return None
-    total_tests_count = len(items)
-    if splits and group:
+
+        if not group and not splits:
+            # don't split unless explicitly requested
+            return None
+
+        if not os.path.isfile(durations_report_path):
+            self._messages.append(
+                "Not splitting tests because the durations_report is missing"
+            )
+            return None
+
         with open(durations_report_path) as f:
             stored_durations = OrderedDict(json.load(f))
 
         start_idx, end_idx = _calculate_suite_start_and_end_idx(
             splits, group, items, stored_durations
         )
+
+        self._suite = TestSuite(splits, len(items))
+        self._group = TestGroup(group, end_idx - start_idx)
         items[:] = items[start_idx:end_idx]
 
-        terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
-        terminal_writer = create_terminal_writer(config)
-        message = terminal_writer.markup(
-            " Running group {}/{} ({}/{} tests)\n".format(
-                group, splits, len(items), total_tests_count
-            )
-        )
-        terminal_reporter.write(message)
-    return None
+
+def pytest_configure(config: "Config") -> None:
+    config.pluginmanager.register(SplitPlugin())
 
 
 def pytest_sessionfinish(session: "Session") -> None:
