@@ -22,7 +22,8 @@ setuptools.setup(
     install_requires=["pytest"],
     extras_require={"testing": tests_require},
     classifiers=[
-        "Development Status :: 4 - Beta" "Intended Audience :: Developers",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
