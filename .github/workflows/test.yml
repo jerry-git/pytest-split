@@ -32,18 +32,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.6", "3.7", "3.8", "3.9", ]  # "3.10.0-beta.1"
+        python-version: [ "3.6", "3.7", "3.8", "3.9", ]
         pytest-version: [ "4", "5", "6" ]
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
+
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Pytest ${{ matrix.pytest-version }}
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        uses: actions/cache@v2
+        id: cache-venv
+        with:
+          path: .venv
+          key: ${{ hashFiles('**/poetry.lock') }}-0
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+
+      - name: Install Pytest
         run: pip install pytest==${{ matrix.pytest-version }}
+
       - name: Install package
-        run: pip install -e .
+        run: poetry install --no-interaction
+
       - name: Run tests
-        run: pytest --verbose --assert=plain
+        run: |
+          source .venv/bin/activate
+          poetry run pytest --cov=src --verbose --assert=plain
