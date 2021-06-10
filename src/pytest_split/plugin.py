@@ -1,13 +1,15 @@
 import json
+import heapq
 import os
 from typing import TYPE_CHECKING
+from collections import namedtuple
 
 import pytest
 from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 if TYPE_CHECKING:
-    from typing import List, Optional, Tuple, Union
+    from typing import List, Optional, Union, Dict
 
     from _pytest import nodes
     from _pytest.config import Config
@@ -16,6 +18,8 @@ if TYPE_CHECKING:
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+
+test_group = namedtuple("test_group", "selected, deselected, duration")
 
 
 def pytest_addoption(parser: "Parser") -> None:
@@ -136,65 +140,64 @@ class PytestSplitPlugin(Base):
         Collect and select the tests we want to run, and deselect the rest.
         """
         splits: int = config.option.splits
-        group: int = config.option.group
+        group_idx: int = config.option.group
 
-        selected_tests, deselected_tests = self._split_tests(splits, group, items, self.cached_durations)
+        groups = split_tests(splits, items, self.cached_durations)
+        group = groups[group_idx - 1]
 
-        items[:] = selected_tests
-        config.hook.pytest_deselected(items=deselected_tests)
+        items[:] = group.selected
+        config.hook.pytest_deselected(items=group.deselected)
 
-        self.writer.line(self.writer.markup(f"\n\n[pytest-split] Running group {group}/{splits}\n"))
+        self.writer.line(self.writer.markup(f"\n\n[pytest-split] Running group {group_idx}/{splits}\n"))
         return None
 
-    @staticmethod
-    def _split_tests(
-        splits: int,
-        group: int,
-        items: "List[nodes.Item]",
-        stored_durations: dict,
-    ) -> "Tuple[list, list]":
-        """
-        Split tests into groups by runtime.
 
-        :param splits: How many groups we're splitting in.
-        :param group: Which group this run represents.
-        :param items: Test items passed down by Pytest.
-        :param stored_durations: Our cached test runtimes.
-        :return:
-            Tuple of two lists.
-            The first list represents the tests we want to run,
-            while the other represents the tests we want to deselect.
-        """
+def split_tests(splits: int, items: "List[nodes.Item]", durations: dict) -> "List[test_group]":
+    """
+    Split tests into groups by runtime.
+    Essentially assigns the test with the largest runtime to the test with
+    the smallest duration sum.
+
+    :param splits: How many groups we're splitting in.
+    :param group: Which group this run represents.
+    :param items: Test items passed down by Pytest.
+    :param durations: Our cached test runtimes.
+    :return:
+        List of groups
+    """
+    test_ids = [item.nodeid for item in items]
+    durations = {k: v for k, v in durations.items() if k in test_ids}
+
+    if durations:
         # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
-        test_ids = [item.nodeid for item in items]
-        durations = {k: v for k, v in stored_durations.items() if k in test_ids}
+        avg_duration_per_test = sum(durations.values()) / len(durations)
+    else:
+        # If there are no durations, give every test the same arbitrary value
+        avg_duration_per_test = 1
 
-        if durations:
-            avg_duration_per_test = sum(durations.values()) / len(durations)
-        else:
-            # If there are no durations, give every test the same arbitrary value
-            avg_duration_per_test = 1
+    selected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
+    deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
+    duration: "List[float]" = [0 for i in range(splits)]
 
-        tests_and_durations = {item: durations.get(item.nodeid, avg_duration_per_test) for item in items}
-        time_per_group = sum(tests_and_durations.values()) / splits
-        selected, deselected = [], []
+    # create a heap of the form (summed_durations, index)
+    heap = [(0, i) for i in range(splits)]
+    heapq.heapify(heap)
+    for item in items:
+        item_duration = durations.get(item.nodeid, avg_duration_per_test)
+        summed_durations, group_idx = heapq.heappop(heap)
+        new_group_durations = summed_durations + item_duration
 
-        for _group in range(1, splits + 1):
-            group_tests, group_runtime = [], 0
+        # store assignment
+        selected[group_idx].append(item)
+        duration[group_idx] = new_group_durations
+        for i in range(splits):
+            if i != group_idx:
+                deselected[i].append(item)
 
-            for item in dict(tests_and_durations):
-                if group_runtime > time_per_group:
-                    break
+        # set new duration
+        heapq.heappush(heap, (new_group_durations, group_idx))
 
-                group_tests.append(item)
-                group_runtime += tests_and_durations.pop(item)
-
-            if _group == group:
-                selected = group_tests
-            else:
-                deselected.extend(group_tests)
-
-        return selected, deselected
+    return [test_group(selected=selected[i], deselected=deselected[i], duration=duration[i]) for i in range(splits)]
 
 
 class PytestSplitCachePlugin(Base):
@@ -208,7 +211,7 @@ class PytestSplitCachePlugin(Base):
         https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L308
         """
         terminal_reporter = self.config.pluginmanager.get_plugin("terminalreporter")
-        test_durations = {}
+        test_durations: "Dict[str, float]" = {}
 
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:

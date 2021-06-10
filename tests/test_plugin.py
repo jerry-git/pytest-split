@@ -1,9 +1,11 @@
 import itertools
 import json
 import os
+from collections import namedtuple
 
 import pytest
 from _pytest.main import ExitCode
+from pytest_split.plugin import split_tests
 
 pytest_plugins = ["pytester"]
 
@@ -73,27 +75,27 @@ class TestSplitToSuites:
                 1,
                 2,
                 [
-                    ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7"],
-                    ["test_8", "test_9", "test_10"],
+                    ["test_1", "test_3", "test_5", "test_7", "test_9"],
+                    ["test_2", "test_4", "test_6", "test_8", "test_10"],
                 ],
             ),
             (
                 2,
                 3,
                 [
-                    ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6"],
-                    ["test_7", "test_8", "test_9"],
-                    ["test_10"],
+                    ["test_1", "test_4", "test_7", "test_10"],
+                    ["test_2", "test_5", "test_8"],
+                    ["test_3", "test_6", "test_9"],
                 ],
             ),
             (
                 3,
                 4,
                 [
-                    ["test_1", "test_2", "test_3", "test_4"],
-                    ["test_5", "test_6", "test_7"],
-                    ["test_8", "test_9"],
-                    ["test_10"],
+                    ["test_1", "test_5", "test_9"],
+                    ["test_2", "test_6", "test_10"],
+                    ["test_3", "test_7"],
+                    ["test_4", "test_8"],
                 ],
             ),
         ],
@@ -147,8 +149,9 @@ class TestSplitToSuites:
         assert result.ret == ExitCode.USAGE_ERROR
 
         # Runs if they both are
-        result = example_suite.inline_run("--splits", "2", "--group", "1")
-        result.assertoutcome(passed=6)
+        result = example_suite.inline_run("--splits", "2", "--group", "1", "--durations-path", durations_path)
+        assert result.ret == ExitCode.OK
+        result.assertoutcome(passed=5)
 
     def test_it_adapts_splits_based_on_new_and_deleted_tests(self, example_suite, durations_path):
         # Only 4/10 tests listed here, avg duration 1 sec
@@ -169,19 +172,23 @@ class TestSplitToSuites:
 
         result = example_suite.inline_run("--splits", "3", "--group", "1", "--durations-path", durations_path)
         result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_1", "test_2", "test_3", "test_4"]
+        assert _passed_test_names(result) == ["test_1", "test_4", "test_8", "test_10"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "2", "--durations-path", durations_path)
-        result.assertoutcome(passed=3)
-        assert _passed_test_names(result) == ["test_5", "test_6", "test_7"]
+        result.assertoutcome(passed=2)
+        assert _passed_test_names(result) == ["test_2", "test_5"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "3", "--durations-path", durations_path)
-        result.assertoutcome(passed=3)
-        assert _passed_test_names(result) == [
-            "test_8",
-            "test_9",
-            "test_10",
-        ]
+        result.assertoutcome(passed=4)
+        assert _passed_test_names(result) == ["test_3", "test_6", "test_7", "test_9"]
+
+    def test_handles_case_of_no_durations_for_group(self, example_suite, durations_path):
+        with open(durations_path, "w") as f:
+            json.dump({}, f)
+
+        result = example_suite.inline_run("--splits", "1", "--group", "1", "--durations-path", durations_path)
+        assert result.ret == ExitCode.OK
+        result.assertoutcome(passed=10)
 
     def test_it_splits_with_other_collect_hooks(self, testdir, durations_path):
         expected_tests_per_group = [
@@ -266,6 +273,82 @@ class TestHasExpectedOutput:
 
         outerr = capsys.readouterr()
         assert "[pytest-split]" not in outerr.out
+
+    def test_prints_correct_number_of_selected_and_deselected_tests(self, example_suite, capsys, durations_path):
+        test_name = "test_prints_splitting_summary_when_durations_present"
+        with open(durations_path, "w") as f:
+            json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
+        result = example_suite.inline_run("--splits", "5", "--group", "1", "--durations-path", durations_path)
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "collected 10 items / 8 deselected / 2 selected" in outerr.out
+
+
+class TestSplitTests:
+    def test__split_test(self):
+        durations = {"a": 1, "b": 1, "c": 1}
+        item = namedtuple("dummy_item", "nodeid")
+        items = [item(x) for x in durations.keys()]
+        first, second, third = split_tests(splits=3, items=items, durations=durations)
+
+        # each split should have one test
+        assert first.selected == [item("a")]
+        assert first.deselected == [item("b"), item("c")]
+        assert first.duration == 1
+
+        assert second.selected == [item("b")]
+        assert second.deselected == [item("a"), item("c")]
+        assert second.duration == 1
+
+        assert third.selected == [item("c")]
+        assert third.deselected == [item("a"), item("b")]
+        assert third.duration == 1
+
+    @pytest.mark.skip("current algorithm does not cover this")
+    def test__split_test_handles_large_duration_at_end(self):
+        durations = {"a": 1, "b": 1, "c": 1, "d": 3}
+        item = namedtuple("dummy_item", "nodeid")
+        items = [item(x) for x in ["a", "b", "c", "d"]]
+        splits = split_tests(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        assert first.selected == [item("d")]
+        assert second.selected == [item(x) for x in ["a", "b", "c"]]
+
+    def test__split_tests_handles_tests_with_missing_durations(self):
+        durations = {"a": 1}
+        item = namedtuple("dummy_item", "nodeid")
+        items = [item(x) for x in ["a", "b"]]
+        splits = split_tests(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        assert first.selected == [item("a")]
+        assert second.selected == [item("b")]
+
+    def test__split_tests_handles_tests_in_durations_but_missing_from_items(self):
+        durations = {"a": 1, "b": 1}
+        item = namedtuple("dummy_item", "nodeid")
+        items = [item(x) for x in ["a"]]
+        splits = split_tests(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        assert first.selected == [item("a")]
+        assert second.selected == []
+
+    def test__split_tests_calculates_avg_test_duration_only_on_present_tests(self):
+        # If the algo includes test e's duration to calculate the averge then
+        # a will be expected to take a long time, and so 'a' will become its
+        # own group. Intended behaviour is that a gets estimated duration 1 and
+        # this will create more balanced groups.
+        durations = {"b": 1, "c": 1, "d": 1, "e": 10000}
+        item = namedtuple("dummy_item", "nodeid")
+        items = [item(x) for x in ["a", "b", "c", "d"]]
+        splits = split_tests(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        assert first.selected == [item("a"), item("c")]
+        assert second.selected == [item("b"), item("d")]
 
 
 def _passed_test_names(result):
