@@ -123,8 +123,6 @@ class PytestSplitPlugin(Base):
     def __init__(self, config: "Config"):
         super().__init__(config)
 
-        self._messages: "List[str]" = []
-
         if not self.cached_durations:
             message = self.writer.markup(
                 "\n[pytest-split] No test durations found. Pytest-split will "
