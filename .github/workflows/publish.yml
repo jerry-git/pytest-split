@@ -2,7 +2,7 @@ name: publish package on pypi
 
 on:
   release:
-    types: [published, edited]
+    types: [ published ]
 
 jobs:
   build-and-publish-test:
