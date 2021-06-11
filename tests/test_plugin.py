@@ -284,6 +284,16 @@ class TestHasExpectedOutput:
         outerr = capsys.readouterr()
         assert "collected 10 items / 8 deselected / 2 selected" in outerr.out
 
+    def test_prints_estimated_duration(self, example_suite, capsys, durations_path):
+        test_name = "test_prints_estimated_duration"
+        with open(durations_path, "w") as f:
+            json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
+        result = example_suite.inline_run("--splits", "5", "--group", "1", "--durations-path", durations_path)
+        assert result.ret == 0
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Running group 1/5 (estimated duration: 1.00s)" in outerr.out
+
 
 class TestSplitTests:
     def test__split_test(self):

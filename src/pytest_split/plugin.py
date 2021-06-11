@@ -146,7 +146,11 @@ class PytestSplitPlugin(Base):
         items[:] = group.selected
         config.hook.pytest_deselected(items=group.deselected)
 
-        self.writer.line(self.writer.markup(f"\n\n[pytest-split] Running group {group_idx}/{splits}\n"))
+        self.writer.line(
+            self.writer.markup(
+                f"\n\n[pytest-split] Running group {group_idx}/{splits} (estimated duration: {group.duration:.2f}s)\n"
+            )
+        )
         return None
 
 
