@@ -1,11 +1,9 @@
 import itertools
 import json
 import os
-from collections import namedtuple
 
 import pytest
 from _pytest.main import ExitCode
-from pytest_split.plugin import split_tests
 
 pytest_plugins = ["pytester"]
 
@@ -50,90 +48,67 @@ class TestStoreDurations:
 
 
 class TestSplitToSuites:
-    @pytest.mark.parametrize(
-        "param_idx, splits, expected_tests_per_group",
-        [
-            (
-                0,
-                1,
-                [
-                    [
-                        "test_1",
-                        "test_2",
-                        "test_3",
-                        "test_4",
-                        "test_5",
-                        "test_6",
-                        "test_7",
-                        "test_8",
-                        "test_9",
-                        "test_10",
-                    ]
-                ],
-            ),
-            (
-                1,
-                2,
-                [
-                    ["test_1", "test_3", "test_5", "test_7", "test_9"],
-                    ["test_2", "test_4", "test_6", "test_8", "test_10"],
-                ],
-            ),
-            (
-                2,
-                3,
-                [
-                    ["test_1", "test_4", "test_7", "test_10"],
-                    ["test_2", "test_5", "test_8"],
-                    ["test_3", "test_6", "test_9"],
-                ],
-            ),
-            (
-                3,
-                4,
-                [
-                    ["test_1", "test_5", "test_9"],
-                    ["test_2", "test_6", "test_10"],
-                    ["test_3", "test_7"],
-                    ["test_4", "test_8"],
-                ],
-            ),
-        ],
-    )
-    def test_it_splits(self, param_idx, splits, expected_tests_per_group, example_suite, durations_path):
-        assert len(list(itertools.chain(*expected_tests_per_group))) == 10
+    parameters = [
+        (
+            1,
+            1,
+            "duration_based_chunks",
+            ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7", "test_8", "test_9", "test_10"],
+        ),
+        (
+            1,
+            1,
+            "least_duration",
+            ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7", "test_8", "test_9", "test_10"],
+        ),
+        (2, 1, "duration_based_chunks", ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7"]),
+        (2, 2, "duration_based_chunks", ["test_8", "test_9", "test_10"]),
+        (2, 1, "least_duration", ["test_1", "test_3", "test_5", "test_7", "test_9"]),
+        (2, 2, "least_duration", ["test_2", "test_4", "test_6", "test_8", "test_10"]),
+        (3, 1, "duration_based_chunks", ["test_1", "test_2", "test_3", "test_4", "test_5"]),
+        (3, 2, "duration_based_chunks", ["test_6", "test_7", "test_8"]),
+        (3, 3, "duration_based_chunks", ["test_9", "test_10"]),
+        (3, 1, "least_duration", ["test_1", "test_4", "test_7", "test_10"]),
+        (3, 2, "least_duration", ["test_2", "test_5", "test_8"]),
+        (3, 3, "least_duration", ["test_3", "test_6", "test_9"]),
+        (4, 1, "duration_based_chunks", ["test_1", "test_2", "test_3", "test_4"]),
+        (4, 2, "duration_based_chunks", ["test_5", "test_6", "test_7"]),
+        (4, 3, "duration_based_chunks", ["test_8", "test_9"]),
+        (4, 4, "duration_based_chunks", ["test_10"]),
+        (4, 1, "least_duration", ["test_1", "test_5", "test_9"]),
+        (4, 2, "least_duration", ["test_2", "test_6", "test_10"]),
+        (4, 3, "least_duration", ["test_3", "test_7"]),
+        (4, 4, "least_duration", ["test_4", "test_8"]),
+    ]
+    legacy_duration = [True, False]
+    all_params = [(*param, legacy_flag) for param, legacy_flag in itertools.product(parameters, legacy_duration)]
+    enumerated_params = [(i, *param) for i, param in enumerate(all_params)]
 
-        for durations in [
-            # Legacy format - can be removed in v1
-            [
-                *[[f"test_it_splits{param_idx}/test_it_splits.py::test_{num}", 1] for num in range(1, 6)],
-                *[[f"test_it_splits{param_idx}/test_it_splits.py::test_{num}", 2] for num in range(6, 11)],
-            ],
-            # Current format
-            {
-                **{f"test_it_splits{param_idx}/test_it_splits.py::test_{num}": 1 for num in range(1, 6)},
-                **{f"test_it_splits{param_idx}/test_it_splits.py::test_{num}": 2 for num in range(6, 11)},
-            },
-        ]:
+    @pytest.mark.parametrize("test_idx, splits, group, algo, expected, legacy_flag", enumerated_params)
+    def test_it_splits(self, test_idx, splits, group, algo, expected, legacy_flag, example_suite, durations_path):
+        durations = {
+            **{f"test_it_splits{test_idx}/test_it_splits.py::test_{num}": 1 for num in range(1, 6)},
+            **{f"test_it_splits{test_idx}/test_it_splits.py::test_{num}": 2 for num in range(6, 11)},
+        }
+        if legacy_flag:
+            # formats durations to legacy format
+            durations = [list(tup) for tup in durations.items()]
 
-            with open(durations_path, "w") as f:
-                json.dump(durations, f)
+        with open(durations_path, "w") as f:
+            json.dump(durations, f)
 
-            results = [
-                example_suite.inline_run(
-                    "--splits",
-                    str(splits),
-                    "--group",
-                    str(group + 1),
-                    "--durations-path",
-                    durations_path,
-                )
-                for group in range(splits)
-            ]
-
-            for result, expected_tests in zip(results, expected_tests_per_group):
-                result.assertoutcome(passed=len(expected_tests))
-                assert _passed_test_names(result) == expected_tests
+        result = example_suite.inline_run(
+            "--splits",
+            str(splits),
+            "--group",
+            str(group),
+            "--durations-path",
+            durations_path,
+            "--splitting-algorithm",
+            algo,
+        )
+        result.assertoutcome(passed=len(expected))
+        assert _passed_test_names(result) == expected
 
     def test_it_adapts_splits_based_on_new_and_deleted_tests(self, example_suite, durations_path):
         # Only 4/10 tests listed here, avg duration 1 sec
@@ -154,15 +129,15 @@ class TestSplitToSuites:
 
         result = example_suite.inline_run("--splits", "3", "--group", "1", "--durations-path", durations_path)
         result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_1", "test_4", "test_8", "test_10"]
+        assert _passed_test_names(result) == ["test_1", "test_2", "test_3", "test_4"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "2", "--durations-path", durations_path)
-        result.assertoutcome(passed=2)
-        assert _passed_test_names(result) == ["test_2", "test_5"]
+        result.assertoutcome(passed=3)
+        assert _passed_test_names(result) == ["test_5", "test_6", "test_7"]
 
         result = example_suite.inline_run("--splits", "3", "--group", "3", "--durations-path", durations_path)
-        result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_3", "test_6", "test_7", "test_9"]
+        result.assertoutcome(passed=3)
+        assert _passed_test_names(result) == ["test_8", "test_9", "test_10"]
 
     def test_handles_case_of_no_durations_for_group(self, example_suite, durations_path):
         with open(durations_path, "w") as f:
@@ -237,6 +212,16 @@ class TestRaisesUsageErrors:
         outerr = capsys.readouterr()
         assert "argument `--splits` must be >= 1" in outerr.err
 
+    def test_returns_nonzero_when_invalid_algorithm_name(self, example_suite, capsys):
+        result = example_suite.inline_run("--splits", "0", "--group", "1", "--splitting-algorithm", "NON_EXISTENT")
+        assert result.ret == ExitCode.USAGE_ERROR
+
+        outerr = capsys.readouterr()
+        assert (
+            "argument --splitting-algorithm: invalid choice: 'NON_EXISTENT' "
+            "(choose from 'duration_based_chunks', 'least_duration')"
+        ) in outerr.err
+
 
 class TestHasExpectedOutput:
     def test_prints_splitting_summary_when_durations_present(self, example_suite, capsys, durations_path):
@@ -275,72 +260,6 @@ class TestHasExpectedOutput:
 
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/5 (estimated duration: 1.00s)" in outerr.out
-
-
-class TestSplitTests:
-    def test__split_test(self):
-        durations = {"a": 1, "b": 1, "c": 1}
-        item = namedtuple("dummy_item", "nodeid")
-        items = [item(x) for x in durations.keys()]
-        first, second, third = split_tests(splits=3, items=items, durations=durations)
-
-        # each split should have one test
-        assert first.selected == [item("a")]
-        assert first.deselected == [item("b"), item("c")]
-        assert first.duration == 1
-
-        assert second.selected == [item("b")]
-        assert second.deselected == [item("a"), item("c")]
-        assert second.duration == 1
-
-        assert third.selected == [item("c")]
-        assert third.deselected == [item("a"), item("b")]
-        assert third.duration == 1
-
-    @pytest.mark.skip("current algorithm does not cover this")
-    def test__split_test_handles_large_duration_at_end(self):
-        durations = {"a": 1, "b": 1, "c": 1, "d": 3}
-        item = namedtuple("dummy_item", "nodeid")
-        items = [item(x) for x in ["a", "b", "c", "d"]]
-        splits = split_tests(splits=2, items=items, durations=durations)
-
-        first, second = splits
-        assert first.selected == [item("d")]
-        assert second.selected == [item(x) for x in ["a", "b", "c"]]
-
-    def test__split_tests_handles_tests_with_missing_durations(self):
-        durations = {"a": 1}
-        item = namedtuple("dummy_item", "nodeid")
-        items = [item(x) for x in ["a", "b"]]
-        splits = split_tests(splits=2, items=items, durations=durations)
-
-        first, second = splits
-        assert first.selected == [item("a")]
-        assert second.selected == [item("b")]
-
-    def test__split_tests_handles_tests_in_durations_but_missing_from_items(self):
-        durations = {"a": 1, "b": 1}
-        item = namedtuple("dummy_item", "nodeid")
-        items = [item(x) for x in ["a"]]
-        splits = split_tests(splits=2, items=items, durations=durations)
-
-        first, second = splits
-        assert first.selected == [item("a")]
-        assert second.selected == []
-
-    def test__split_tests_calculates_avg_test_duration_only_on_present_tests(self):
-        # If the algo includes test e's duration to calculate the averge then
-        # a will be expected to take a long time, and so 'a' will become its
-        # own group. Intended behaviour is that a gets estimated duration 1 and
-        # this will create more balanced groups.
-        durations = {"b": 1, "c": 1, "d": 1, "e": 10000}
-        item = namedtuple("dummy_item", "nodeid")
-        items = [item(x) for x in ["a", "b", "c", "d"]]
-        splits = split_tests(splits=2, items=items, durations=durations)
-
-        first, second = splits
-        assert first.selected == [item("a"), item("c")]
-        assert second.selected == [item("b"), item("d")]
 
 
 def _passed_test_names(result):

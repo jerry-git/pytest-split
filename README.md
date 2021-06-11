@@ -40,5 +40,21 @@ Time goes by, new tests are added and old ones are removed/renamed during develo
 Thus, there's no need to store durations after changing the test suite.
 However, when there are major changes in the suite compared to what's stored in .test_durations, it's recommended to update the duration information with `--store-durations` to ensure that the splitting is in balance.
 
+## Splitting algorithms
+The plugin supports multiple algorithms to split tests into groups.
+Each algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.
+
+| Algorithm      | Maintains Absolute Order | Maintains Relative Order | Split Quality |
+|----------------|--------------------------|--------------------------|---------------|
+| duration_based_chunks       | :heavy_check_mark:       | :heavy_check_mark:       | Good          |
+| least_duration | :heavy_multiplication_x: | :heavy_check_mark:       | Better        |
+
+Explanation of the terms in the table:
+* Absolute Order: whether each group contains all tests between first and last element in the same order as the original list of tests
+* Relative Order: whether each test in each group has the same relative order to its neighbours in the group as in the original list of tests
+
+The `duration_based_chunks` algorithm aims to find optimal boundaries for the list of tests and every test group contains all tests between the start and end bounary.
+The `least_duration` algorithm walks the list of tests and assigns each test to the group with the smallest current duration.
+
 
 [**Demo with GitHub Actions**](https://github.com/jerry-git/pytest-split-gh-actions-demo)
