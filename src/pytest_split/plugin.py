@@ -9,7 +9,7 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 if TYPE_CHECKING:
-    from typing import List, Optional, Union, Dict
+    from typing import List, Optional, Union, Dict, Tuple
 
     from _pytest import nodes
     from _pytest.config import Config
@@ -150,11 +150,11 @@ class PytestSplitPlugin(Base):
         return None
 
 
-def split_tests(splits: int, items: "List[nodes.Item]", durations: dict) -> "List[test_group]":
+def split_tests(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[test_group]":
     """
     Split tests into groups by runtime.
-    Essentially assigns the test with the largest runtime to the test with
-    the smallest duration sum.
+    Assigns the test with the largest runtime to the test with the smallest
+    duration sum.
 
     :param splits: How many groups we're splitting in.
     :param group: Which group this run represents.
@@ -177,11 +177,13 @@ def split_tests(splits: int, items: "List[nodes.Item]", durations: dict) -> "Lis
     deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
     duration: "List[float]" = [0 for i in range(splits)]
 
-    # create a heap of the form (summed_durations, index)
-    heap = [(0, i) for i in range(splits)]
+    # create a heap of the form (summed_durations, group_index)
+    heap: "List[Tuple[float, int]]" = [(0, i) for i in range(splits)]
     heapq.heapify(heap)
     for item in items:
         item_duration = durations.get(item.nodeid, avg_duration_per_test)
+
+        # get group with smallest sum
         summed_durations, group_idx = heapq.heappop(heap)
         new_group_durations = summed_durations + item_duration
 
@@ -192,7 +194,7 @@ def split_tests(splits: int, items: "List[nodes.Item]", durations: dict) -> "Lis
             if i != group_idx:
                 deselected[i].append(item)
 
-        # set new duration
+        # store new duration - in case of ties it sorts by the group_idx
         heapq.heappush(heap, (new_group_durations, group_idx))
 
     return [test_group(selected=selected[i], deselected=deselected[i], duration=duration[i]) for i in range(splits)]
