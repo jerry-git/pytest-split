@@ -155,7 +155,12 @@ class PytestSplitPlugin(Base):
 
         self.writer.line(
             self.writer.markup(
-                f"\n\n[pytest-split] Running group {group_idx}/{splits} (estimated duration: {group.duration:.2f}s)\n"
+                f"\n\n[pytest-split] Splitting tests with algorithm: {config.option.splitting_algorithm}"
+            )
+        )
+        self.writer.line(
+            self.writer.markup(
+                f"[pytest-split] Running group {group_idx}/{splits} (estimated duration: {group.duration:.2f}s)\n"
             )
         )
         return None

@@ -261,6 +261,17 @@ class TestHasExpectedOutput:
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/5 (estimated duration: 1.00s)" in outerr.out
 
+    def test_prints_used_algorithm(self, example_suite, capsys, durations_path):
+        test_name = "test_prints_used_algorithm"
+        with open(durations_path, "w") as f:
+            json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
+
+        result = example_suite.inline_run("--splits", "5", "--group", "1", "--durations-path", durations_path)
+        assert result.ret == ExitCode.OK
+
+        outerr = capsys.readouterr()
+        assert "[pytest-split] Splitting tests with algorithm: duration_based_chunks" in outerr.out
+
 
 def _passed_test_names(result):
     return [passed.nodeid.split("::")[-1] for passed in result.listoutcomes()[0]]
