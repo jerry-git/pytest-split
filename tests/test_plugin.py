@@ -135,24 +135,6 @@ class TestSplitToSuites:
                 result.assertoutcome(passed=len(expected_tests))
                 assert _passed_test_names(result) == expected_tests
 
-    def test_it_does_not_split_with_invalid_args(self, example_suite, durations_path):
-        durations = {"test_it_does_not_split_with_invalid_args.py::test_1": 1}
-        with open(durations_path, "w") as f:
-            json.dump(durations, f)
-
-        # Plugin doesn't run when splits is passed but group is missing
-        result = example_suite.inline_run("--splits", "2", "--durations-path", durations_path)  # no --group
-        assert result.ret == ExitCode.USAGE_ERROR
-
-        # Plugin doesn't run when group is passed but splits is missing
-        result = example_suite.inline_run("--group", "2", "--durations-path", durations_path)  # no --splits
-        assert result.ret == ExitCode.USAGE_ERROR
-
-        # Runs if they both are
-        result = example_suite.inline_run("--splits", "2", "--group", "1", "--durations-path", durations_path)
-        assert result.ret == ExitCode.OK
-        result.assertoutcome(passed=5)
-
     def test_it_adapts_splits_based_on_new_and_deleted_tests(self, example_suite, durations_path):
         # Only 4/10 tests listed here, avg duration 1 sec
         test_path = (
@@ -222,35 +204,35 @@ class TestSplitToSuites:
 class TestRaisesUsageErrors:
     def test_returns_nonzero_when_group_but_not_splits(self, example_suite, capsys):
         result = example_suite.inline_run("--group", "1")
-        assert result.ret == 4
+        assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
         assert "argument `--splits` is required" in outerr.err
 
     def test_returns_nonzero_when_splits_but_not_group(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", "1")
-        assert result.ret == 4
+        assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
         assert "argument `--group` is required" in outerr.err
 
     def test_returns_nonzero_when_group_below_one(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", "3", "--group", "0")
-        assert result.ret == 4
+        assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
         assert "argument `--group` must be >= 1 and <= 3" in outerr.err
 
     def test_returns_nonzero_when_group_larger_than_splits(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", "3", "--group", "4")
-        assert result.ret == 4
+        assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
         assert "argument `--group` must be >= 1 and <= 3" in outerr.err
 
     def test_returns_nonzero_when_splits_below_one(self, example_suite, capsys):
         result = example_suite.inline_run("--splits", "0", "--group", "1")
-        assert result.ret == 4
+        assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
         assert "argument `--splits` must be >= 1" in outerr.err
@@ -262,14 +244,14 @@ class TestHasExpectedOutput:
         with open(durations_path, "w") as f:
             json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
         result = example_suite.inline_run("--splits", "1", "--group", "1", "--durations-path", durations_path)
-        assert result.ret == 0
+        assert result.ret == ExitCode.OK
 
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/1" in outerr.out
 
     def test_does_not_print_splitting_summary_when_no_pytest_split_arguments(self, example_suite, capsys):
         result = example_suite.inline_run()
-        assert result.ret == 0
+        assert result.ret == ExitCode.OK
 
         outerr = capsys.readouterr()
         assert "[pytest-split]" not in outerr.out
@@ -279,7 +261,7 @@ class TestHasExpectedOutput:
         with open(durations_path, "w") as f:
             json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
         result = example_suite.inline_run("--splits", "5", "--group", "1", "--durations-path", durations_path)
-        assert result.ret == 0
+        assert result.ret == ExitCode.OK
 
         outerr = capsys.readouterr()
         assert "collected 10 items / 8 deselected / 2 selected" in outerr.out
@@ -289,7 +271,7 @@ class TestHasExpectedOutput:
         with open(durations_path, "w") as f:
             json.dump([[f"{test_name}0/{test_name}.py::test_1", 0.5]], f)
         result = example_suite.inline_run("--splits", "5", "--group", "1", "--durations-path", durations_path)
-        assert result.ret == 0
+        assert result.ret == ExitCode.OK
 
         outerr = capsys.readouterr()
         assert "[pytest-split] Running group 1/5 (estimated duration: 1.00s)" in outerr.out
