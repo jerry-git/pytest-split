@@ -1,12 +1,11 @@
+import functools
 from typing import TYPE_CHECKING, NamedTuple
+import enum
 import heapq
 
 if TYPE_CHECKING:
     from typing import List, Dict, Tuple
     from _pytest import nodes
-
-
-ALGORITHMS = ["duration_based_chunks", "least_duration"]
 
 
 class TestGroup(NamedTuple):
@@ -107,3 +106,13 @@ def _remove_irrelevant_durations(items: "List[nodes.Item]", durations: "Dict[str
     test_ids = [item.nodeid for item in items]
     durations = {name: durations[name] for name in test_ids if name in durations}
     return durations
+
+
+class Algorithms(enum.Enum):
+    # values have to wrapped inside functools to avoid them being considered method definitions
+    duration_based_chunks = functools.partial(duration_based_chunks)
+    least_duration = functools.partial(least_duration)
+
+    @staticmethod
+    def names() -> "List[str]":
+        return [x.name for x in Algorithms]

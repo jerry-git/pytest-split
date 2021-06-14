@@ -59,9 +59,9 @@ def pytest_addoption(parser: "Parser") -> None:
         "--splitting-algorithm",
         dest="splitting_algorithm",
         type=str,
-        help=f"Algorithm used to split the tests. Choices: {algorithms.ALGORITHMS}",
+        help=f"Algorithm used to split the tests. Choices: {algorithms.Algorithms.names()}",
         default="duration_based_chunks",
-        choices=algorithms.ALGORITHMS,
+        choices=algorithms.Algorithms.names(),
     )
 
 
@@ -146,7 +146,7 @@ class PytestSplitPlugin(Base):
         splits: int = config.option.splits
         group_idx: int = config.option.group
 
-        algo = getattr(algorithms, config.option.splitting_algorithm)
+        algo = algorithms.Algorithms[config.option.splitting_algorithm].value
         groups = algo(splits, items, self.cached_durations)
         group = groups[group_idx - 1]
 

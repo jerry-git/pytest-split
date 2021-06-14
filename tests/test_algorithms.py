@@ -2,18 +2,18 @@ from collections import namedtuple
 
 import pytest
 
-from pytest_split import algorithms
+from pytest_split.algorithms import Algorithms
 
 
 item = namedtuple("item", "nodeid")
 
 
 class TestAlgorithms:
-    @pytest.mark.parametrize("algo_name", algorithms.ALGORITHMS)
+    @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_test(self, algo_name):
         durations = {"a": 1, "b": 1, "c": 1}
         items = [item(x) for x in durations.keys()]
-        algo = getattr(algorithms, algo_name)
+        algo = Algorithms[algo_name].value
         first, second, third = algo(splits=3, items=items, durations=durations)
 
         # each split should have one test
@@ -29,34 +29,34 @@ class TestAlgorithms:
         assert third.deselected == [item("a"), item("b")]
         assert third.duration == 1
 
-    @pytest.mark.parametrize("algo_name", algorithms.ALGORITHMS)
+    @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_tests_handles_tests_in_durations_but_missing_from_items(self, algo_name):
         durations = {"a": 1, "b": 1}
         items = [item(x) for x in ["a"]]
-        algo = getattr(algorithms, algo_name)
+        algo = Algorithms[algo_name].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits
         assert first.selected == [item("a")]
         assert second.selected == []
 
-    @pytest.mark.parametrize("algo_name", algorithms.ALGORITHMS)
+    @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_tests_handles_tests_with_missing_durations(self, algo_name):
         durations = {"a": 1}
         items = [item(x) for x in ["a", "b"]]
-        algo = getattr(algorithms, algo_name)
+        algo = Algorithms[algo_name].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits
         assert first.selected == [item("a")]
         assert second.selected == [item("b")]
 
-    @pytest.mark.parametrize("algo_name", algorithms.ALGORITHMS)
+    @pytest.mark.parametrize("algo_name", Algorithms.names())
     @pytest.mark.skip("current algorithm does handle this well")
     def test__split_test_handles_large_duration_at_end(self, algo_name):
         durations = {"a": 1, "b": 1, "c": 1, "d": 3}
         items = [item(x) for x in ["a", "b", "c", "d"]]
-        algo = getattr(algorithms, algo_name)
+        algo = Algorithms[algo_name].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits
@@ -77,7 +77,7 @@ class TestAlgorithms:
         # this will create more balanced groups.
         durations = {"b": 1, "c": 1, "d": 1, "e": 10000}
         items = [item(x) for x in ["a", "b", "c", "d"]]
-        algo = getattr(algorithms, algo_name)
+        algo = Algorithms[algo_name].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits
