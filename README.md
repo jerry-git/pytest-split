@@ -40,6 +40,8 @@ Time goes by, new tests are added and old ones are removed/renamed during develo
 Thus, there's no need to store durations after changing the test suite.
 However, when there are major changes in the suite compared to what's stored in .test_durations, it's recommended to update the duration information with `--store-durations` to ensure that the splitting is in balance.
 
+The splitting algorithm can be controlled with the `--splitting-algorithm` CLI option and defaults to `duration_based_chunks`. For more information about the different algorithms and their tradeoffs, please see the section below.
+
 ## Splitting algorithms
 The plugin supports multiple algorithms to split tests into groups.
 Each algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.
