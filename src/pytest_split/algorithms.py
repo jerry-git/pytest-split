@@ -1,10 +1,11 @@
-import functools
-from typing import TYPE_CHECKING, NamedTuple
 import enum
+import functools
 import heapq
+from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
-    from typing import List, Dict, Tuple
+    from typing import Dict, List, Tuple
+
     from _pytest import nodes
 
 

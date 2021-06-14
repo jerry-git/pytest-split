@@ -4,7 +4,6 @@ import pytest
 
 from pytest_split.algorithms import Algorithms
 
-
 item = namedtuple("item", "nodeid")
 
 

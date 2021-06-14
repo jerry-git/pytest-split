@@ -9,7 +9,7 @@ from _pytest.reports import TestReport
 from pytest_split import algorithms
 
 if TYPE_CHECKING:
-    from typing import List, Optional, Union, Dict
+    from typing import Dict, List, Optional, Union
 
     from _pytest import nodes
     from _pytest.config import Config
