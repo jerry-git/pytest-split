@@ -7,13 +7,12 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 if TYPE_CHECKING:
-    from typing import List, Tuple, Optional, Union
+    from typing import List, Optional, Tuple, Union
 
     from _pytest import nodes
-
-    from _pytest.main import ExitCode
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
+    from _pytest.main import ExitCode
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
