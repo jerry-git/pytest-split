@@ -130,7 +130,7 @@ class PytestSplitPlugin(Base):
             )
             self.writer.line(message)
 
-    @hookimpl(tryfirst=True)
+    @hookimpl(trylast=True)
     def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
         """
         Collect and select the tests we want to run, and deselect the rest.

@@ -183,6 +183,34 @@ class TestSplitToSuites:
             "test_10",
         ]
 
+    def test_it_splits_with_other_collect_hooks(self, testdir, durations_path):
+        expected_tests_per_group = [
+            ["test_1", "test_2", "test_3"],
+            ["test_4", "test_5"],
+        ]
+
+        tests_to_run = "".join(f"@pytest.mark.mark_one\ndef test_{num}(): pass\n" for num in range(1, 6))
+        tests_to_exclude = "".join(f"def test_{num}(): pass\n" for num in range(6, 11))
+        testdir.makepyfile(f"import pytest\n{tests_to_run}\n{tests_to_exclude}")
+
+        durations = (
+            {
+                **{f"test_it_splits_when_paired_with_marker_expressions.py::test_{num}": 1 for num in range(1, 3)},
+                **{f"test_it_splits_when_paired_with_marker_expressions.py::test_{num}": 2 for num in range(3, 6)},
+            },
+        )
+        with open(durations_path, "w") as f:
+            json.dump(durations[0], f)
+
+        results = [
+            testdir.inline_run("--splits", 2, "--group", group, "--durations-path", durations_path, "-m" "mark_one")
+            for group in range(1, 3)
+        ]
+
+        for result, expected_tests in zip(results, expected_tests_per_group):
+            result.assertoutcome(passed=len(expected_tests))
+            assert _passed_test_names(result) == expected_tests
+
 
 class TestRaisesUsageErrors:
     def test_returns_nonzero_when_group_but_not_splits(self, example_suite, capsys):
