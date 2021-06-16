@@ -8,7 +8,7 @@ authors = ["Jerry Pussinen <jerry.pussinen@gmail.com>"]
 maintainers = []
 readme = 'README.md'
 keywords = ['pytest', 'plugin', 'split', 'tests']
-packages = [{ include = 'src/pytest_split' }]
+packages = [{ include = 'pytest_split', from = 'src' }]
 license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -36,7 +36,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.plugins.pytest11]
-pytest-split = "src.pytest_split.plugin"
+pytest-split = "pytest_split.plugin"
 
 [tool.black]
 line-length = 120
