@@ -1,7 +1,7 @@
 # Pytest-split
 
 [![Test Workflow](https://github.com/jerry-git/pytest-split/actions/workflows/test.yml/badge.svg?branch=master
-)](https://github.com/jerry-git/pytest-split/actions/workflows/test.yml?query=branch%3Amaster) 
+)](https://github.com/jerry-git/pytest-split/actions/workflows/test.yml?query=branch%3Amaster)
 [![PyPI version](https://badge.fury.io/py/pytest-split.svg)](https://pypi.python.org/pypi/pytest-split/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/pytest-split.svg)](https://pypi.python.org/pypi/pytest-split/)
 
