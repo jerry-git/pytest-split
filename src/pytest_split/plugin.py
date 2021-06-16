@@ -216,13 +216,13 @@ class PytestSplitCachePlugin(Base):
 
                     # These ifs be removed after this is solved: # https://github.com/spulec/freezegun/issues/286
                     if test_report.duration < 0:
-                        continue
+                        continue  # pragma: no cover
                     if (
                         test_report.when in ("teardown", "setup")
                         and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
-                        continue
+                        continue  # pragma: no cover
 
                     # Add test durations to map
                     if test_report.nodeid not in test_durations:
