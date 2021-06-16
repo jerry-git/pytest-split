@@ -73,5 +73,4 @@ jobs:
           coverage run -m pytest --verbose --assert=plain
 
       - name: Generate coverage report
-          run: |
-            coverage report
+        run: coverage report
