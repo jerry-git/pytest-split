@@ -70,4 +70,5 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest --cov=src --verbose --assert=plain
+          coverage run -m pytest --verbose --assert=plain
+          coverage report

@@ -28,7 +28,7 @@ python = "^3.6.1"
 pytest = "^5 | ^6"
 
 [tool.poetry.dev-dependencies]
-pytest-cov = "^2.12.1"
+coverage = {extras = ["toml"], version = "^5.5"}
 pre-commit = "^2.13.0"
 
 [build-system]
@@ -43,16 +43,16 @@ line-length = 120
 include = '\.pyi?$'
 
 [tool.coverage.run]
-source = ["src/pytest_split/*"]
-omit = []
-branch = true
+include = ["src/pytest_split/*"]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
 exclude_lines = [
     'if TYPE_CHECKING:',
+    'pragma: no cover'
 ]
+fail_under = 100
 
 [tool.isort]
 profile = 'black'
