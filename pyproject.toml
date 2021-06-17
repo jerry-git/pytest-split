@@ -7,9 +7,10 @@ repository = 'https://github.com/jerry-git/pytest-split'
 authors = ["Jerry Pussinen <jerry.pussinen@gmail.com>"]
 maintainers = []
 readme = 'README.md'
+license = "MIT"
 keywords = ['pytest', 'plugin', 'split', 'tests']
 packages = [{ include = 'pytest_split', from = 'src' }]
-license = "MIT"
+include = ['LICENCE']
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
