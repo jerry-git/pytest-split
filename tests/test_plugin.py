@@ -26,7 +26,7 @@ class TestStoreDurations:
         with open(durations_path) as f:
             durations = json.load(f)
 
-        assert list(durations.keys()) == [
+        assert list(durations.keys()) == sorted([
             "test_it_stores.py::test_1",
             "test_it_stores.py::test_2",
             "test_it_stores.py::test_3",
@@ -37,7 +37,7 @@ class TestStoreDurations:
             "test_it_stores.py::test_8",
             "test_it_stores.py::test_9",
             "test_it_stores.py::test_10",
-        ]
+        ])
 
         for duration in durations.values():
             assert isinstance(duration, float)
