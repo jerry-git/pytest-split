@@ -42,6 +42,9 @@ However, when there are major changes in the suite compared to what's stored in 
 
 The splitting algorithm can be controlled with the `--splitting-algorithm` CLI option and defaults to `duration_based_chunks`. For more information about the different algorithms and their tradeoffs, please see the section below.
 
+## Interactions with other pytest plugins
+* [`pytest-random-order`](https://github.com/jbasko/pytest-random-order): ⚠️ The **default settings** of that plugin (setting only `--random-order` to activate it) are **incompatible** with `pytest-split`. Test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all. Instead, a global random seed needs to be computed before running the tests (for example using `$RANDOM` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.
+
 ## Splitting algorithms
 The plugin supports multiple algorithms to split tests into groups.
 Each algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.
