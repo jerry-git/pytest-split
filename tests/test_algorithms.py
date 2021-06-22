@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import pytest
 
-from pytest_split.algorithms import Algorithms
+from src.pytest_split.algorithms import Algorithms, duration_based_chunks
 
 item = namedtuple("item", "nodeid")
 
@@ -11,7 +11,7 @@ class TestAlgorithms:
     @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_test(self, algo_name):
         durations = {"a": 1, "b": 1, "c": 1}
-        items = [item(x) for x in durations.keys()]
+        items = [item(x) for x in durations]
         algo = Algorithms[algo_name].value
         first, second, third = algo(splits=3, items=items, durations=durations)
 
@@ -84,26 +84,26 @@ class TestAlgorithms:
         assert first.selected == expected_first
         assert second.selected == expected_second
 
-    def test_each_group_is_assigned_a_test(self):
-        from collections import namedtuple
-
-        from pytest_split import algorithms
-
+    def test_each_group_is_assigned_a_test_front_loaded(self):
         item = namedtuple("item", "nodeid")
 
-        durations = {}
-        durations["a"] = 2313.7016449670773
-        durations["b"] = 46.880724348986405
-        durations["c"] = 2196.7077018650016
-        durations["d"] = 379.9717799640057
-        durations["e"] = 1476.3481151770247
-        durations["f"] = 979.7326026459923
-        durations["g"] = 1876.5443489580794
-        durations["h"] = 1.3951316330058035
+        durations = {"a": 100, "b": 1, "c": 1, "d": 1, "e": 1, "f": 1, "g": 1, "h": 1}
 
         items = [item(x) for x in ["a", "b", "c", "d", "e", "f", "g", "h"]]
 
-        groups = algorithms.duration_based_chunks(7, items, durations)
+        groups = duration_based_chunks(8, items, durations)
+
+        for i in range(7):
+            assert groups[i].selected != []
+
+    def test_each_group_is_assigned_a_test_back_loaded(self):
+        item = namedtuple("item", "nodeid")
+
+        durations = {"a": 1, "b": 1, "c": 1, "d": 1, "e": 1, "f": 1, "g": 1, "h": 100}
+
+        items = [item(x) for x in ["a", "b", "c", "d", "e", "f", "g", "h"]]
+
+        groups = duration_based_chunks(8, items, durations)
 
         for i in range(7):
             assert groups[i].selected != []

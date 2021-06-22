@@ -81,14 +81,21 @@ def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Di
     duration: "List[float]" = [0 for i in range(splits)]
 
     group_idx = 0
-    for item in items:
+    test_count = len(items)
+    for index, item in enumerate(items):
         item_duration = tests_and_durations.pop(item)
 
-        if duration[group_idx] + item_duration > time_per_group:
-            if not selected[group_idx]:
-                # Add test to current group if group has no tests
-                pass
-            elif group_idx + 1 >= splits:
+        tests_left = test_count - index
+        groups_left = splits - group_idx
+
+        if not selected[group_idx]:
+            # Add test to current group if group has no tests
+            pass
+        elif tests_left < groups_left:
+            # Make sure that we assign at least one test to each group
+            group_idx += 1
+        elif duration[group_idx] + item_duration > time_per_group:
+            if group_idx + 1 >= splits:
                 # Stay with group index if it's the final group in the split
                 pass
             else:
