@@ -60,6 +60,7 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
 def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[TestGroup]":
     """
     Split tests into groups by runtime.
+
     Ensures tests are split into non-overlapping groups.
     The original list of test items is split into groups by finding boundary indices i_0, i_1, i_2
     and creating group_1 = items[0:i_0], group_2 = items[i_0, i_1], group_3 = items[i_1, i_2], ...
@@ -81,14 +82,25 @@ def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Di
 
     group_idx = 0
     for item in items:
-        if duration[group_idx] >= time_per_group:
-            group_idx += 1
+        item_duration = tests_and_durations.pop(item)
+
+        if duration[group_idx] + item_duration > time_per_group:
+            if not selected[group_idx]:
+                # Add test to current group if group has no tests
+                pass
+            elif group_idx + 1 >= splits:
+                # Stay with group index if it's the final group in the split
+                pass
+            else:
+                # Otherwise, bump index to add to the next group
+                group_idx += 1
 
         selected[group_idx].append(item)
+        duration[group_idx] += item_duration
+
         for i in range(splits):
             if i != group_idx:
                 deselected[i].append(item)
-        duration[group_idx] += tests_and_durations.pop(item)
 
     return [TestGroup(selected=selected[i], deselected=deselected[i], duration=duration[i]) for i in range(splits)]
 

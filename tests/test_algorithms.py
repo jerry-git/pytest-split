@@ -83,3 +83,27 @@ class TestAlgorithms:
         expected_first, expected_second = expected
         assert first.selected == expected_first
         assert second.selected == expected_second
+
+    def test_each_group_is_assigned_a_test(self):
+        from collections import namedtuple
+
+        from pytest_split import algorithms
+
+        item = namedtuple("item", "nodeid")
+
+        durations = {}
+        durations["a"] = 2313.7016449670773
+        durations["b"] = 46.880724348986405
+        durations["c"] = 2196.7077018650016
+        durations["d"] = 379.9717799640057
+        durations["e"] = 1476.3481151770247
+        durations["f"] = 979.7326026459923
+        durations["g"] = 1876.5443489580794
+        durations["h"] = 1.3951316330058035
+
+        items = [item(x) for x in ["a", "b", "c", "d", "e", "f", "g", "h"]]
+
+        groups = algorithms.duration_based_chunks(7, items, durations)
+
+        for i in range(7):
+            assert groups[i].selected != []
