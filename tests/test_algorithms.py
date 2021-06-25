@@ -82,3 +82,21 @@ class TestAlgorithms:
         expected_first, expected_second = expected
         assert first.selected == expected_first
         assert second.selected == expected_second
+
+    @pytest.mark.parametrize(
+        "algo_name, expected",
+        [
+            ("duration_based_chunks", [[item("a"), item("b"), item("c"), item("d"), item("e")], []]),
+            ("least_duration", [[item("e")], [item("a"), item("b"), item("c"), item("d")]]),
+        ],
+    )
+    def test__split_tests_maintains_relative_order_of_tests(self, algo_name, expected):
+        durations = {"a": 2, "b": 3, "c": 4, "d": 5, "e": 10000}
+        items = [item(x) for x in ["a", "b", "c", "d", "e"]]
+        algo = Algorithms[algo_name].value
+        splits = algo(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        expected_first, expected_second = expected
+        assert first.selected == expected_first
+        assert second.selected == expected_second
