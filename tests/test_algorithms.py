@@ -50,12 +50,11 @@ class TestAlgorithms:
         assert first.selected == [item("a")]
         assert second.selected == [item("b")]
 
-    @pytest.mark.parametrize("algo_name", Algorithms.names())
-    @pytest.mark.skip("current algorithm does handle this well")
-    def test__split_test_handles_large_duration_at_end(self, algo_name):
+    def test__split_test_handles_large_duration_at_end(self):
+        """NOTE: only least_duration does this correctly"""
         durations = {"a": 1, "b": 1, "c": 1, "d": 3}
         items = [item(x) for x in ["a", "b", "c", "d"]]
-        algo = Algorithms[algo_name].value
+        algo = Algorithms["least_duration"].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits

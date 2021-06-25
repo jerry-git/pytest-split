@@ -19,8 +19,12 @@ class TestGroup(NamedTuple):
 def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[TestGroup]":
     """
     Split tests into groups by runtime.
-    Assigns the test with the largest runtime to the test with the smallest
-    duration sum.
+    It walks the test items, starting with the test with largest duration.
+    It assigns the test with the largest runtime to the group with the smallest duration sum.
+
+    The algorithm sorts the items by their duration. Since the sorting algorithm is stable, ties will be broken by
+    maintaining the original order of items. It is therefore important that the order of items be identical on all nodes
+    that use this plugin. Due to issue #25 this might not always be the case.
 
     :param splits: How many groups we're splitting in.
     :param items: Test items passed down by Pytest.
@@ -30,6 +34,12 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
     """
     items_with_durations = _get_items_with_durations(items, durations)
 
+    # add index of item in list
+    items_with_durations = [(*tup, i) for i, tup in enumerate(items_with_durations)]
+
+    # sort in ascending order
+    sorted_items_with_durations = sorted(items_with_durations, key=lambda tup: tup[1], reverse=True)
+
     selected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
     deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
     duration: "List[float]" = [0 for i in range(splits)]
@@ -37,13 +47,13 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
     # create a heap of the form (summed_durations, group_index)
     heap: "List[Tuple[float, int]]" = [(0, i) for i in range(splits)]
     heapq.heapify(heap)
-    for item, item_duration in items_with_durations:
+    for item, item_duration, original_index in sorted_items_with_durations:
         # get group with smallest sum
         summed_durations, group_idx = heapq.heappop(heap)
         new_group_durations = summed_durations + item_duration
 
         # store assignment
-        selected[group_idx].append(item)
+        selected[group_idx].append((item, original_index))
         duration[group_idx] = new_group_durations
         for i in range(splits):
             if i != group_idx:
@@ -52,7 +62,14 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
         # store new duration - in case of ties it sorts by the group_idx
         heapq.heappush(heap, (new_group_durations, group_idx))
 
-    return [TestGroup(selected=selected[i], deselected=deselected[i], duration=duration[i]) for i in range(splits)]
+    groups = []
+    for i in range(splits):
+        # sort the items by their original index to maintain relative ordering
+        # we don't care about the order of deselected items
+        s = [item for item, original_index in sorted(selected[i], key=lambda tup: tup[1])]
+        group = TestGroup(selected=s, deselected=deselected[i], duration=duration[i])
+        groups.append(group)
+    return groups
 
 
 def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[TestGroup]":
