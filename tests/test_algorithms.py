@@ -50,12 +50,11 @@ class TestAlgorithms:
         assert first.selected == [item("a")]
         assert second.selected == [item("b")]
 
-    @pytest.mark.parametrize("algo_name", Algorithms.names())
-    @pytest.mark.skip("current algorithm does handle this well")
-    def test__split_test_handles_large_duration_at_end(self, algo_name):
+    def test__split_test_handles_large_duration_at_end(self):
+        """NOTE: only least_duration does this correctly"""
         durations = {"a": 1, "b": 1, "c": 1, "d": 3}
         items = [item(x) for x in ["a", "b", "c", "d"]]
-        algo = Algorithms[algo_name].value
+        algo = Algorithms["least_duration"].value
         splits = algo(splits=2, items=items, durations=durations)
 
         first, second = splits
@@ -76,6 +75,24 @@ class TestAlgorithms:
         # this will create more balanced groups.
         durations = {"b": 1, "c": 1, "d": 1, "e": 10000}
         items = [item(x) for x in ["a", "b", "c", "d"]]
+        algo = Algorithms[algo_name].value
+        splits = algo(splits=2, items=items, durations=durations)
+
+        first, second = splits
+        expected_first, expected_second = expected
+        assert first.selected == expected_first
+        assert second.selected == expected_second
+
+    @pytest.mark.parametrize(
+        "algo_name, expected",
+        [
+            ("duration_based_chunks", [[item("a"), item("b"), item("c"), item("d"), item("e")], []]),
+            ("least_duration", [[item("e")], [item("a"), item("b"), item("c"), item("d")]]),
+        ],
+    )
+    def test__split_tests_maintains_relative_order_of_tests(self, algo_name, expected):
+        durations = {"a": 2, "b": 3, "c": 4, "d": 5, "e": 10000}
+        items = [item(x) for x in ["a", "b", "c", "d", "e"]]
         algo = Algorithms[algo_name].value
         splits = algo(splits=2, items=items, durations=durations)
 
