@@ -44,7 +44,7 @@ The splitting algorithm can be controlled with the `--splitting-algorithm` CLI o
 
 ### CLI commands
 #### slowest-tests
-Lists the slowest tests based on the information stored in the test durations file. See `slowest-tests help` for more
+Lists the slowest tests based on the information stored in the test durations file. See `slowest-tests --help` for more
  information.
 
 ## Interactions with other pytest plugins
