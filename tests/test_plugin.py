@@ -7,10 +7,12 @@ from _pytest.main import ExitCode
 
 pytest_plugins = ["pytester"]
 
+EXAMPLE_SUITE_TEST_COUNT = 10
+
 
 @pytest.fixture
 def example_suite(testdir):
-    testdir.makepyfile("".join(f"def test_{num}(): pass\n" for num in range(1, 11)))
+    testdir.makepyfile("".join(f"def test_{num}(): pass\n" for num in range(1, EXAMPLE_SUITE_TEST_COUNT + 1)))
     yield testdir
 
 
@@ -41,6 +43,50 @@ class TestStoreDurations:
 
         for duration in durations.values():
             assert isinstance(duration, float)
+
+    def test_it_overrides_existing_durations(self, example_suite, durations_path):
+        existing_duration_test_name = (
+            "test_it_overrides_existing_durations0/test_it_overrides_existing_durations.py::test_1"
+        )
+        old_value = 99
+        with open(durations_path, "w") as f:
+            json.dump({existing_duration_test_name: old_value}, f)
+
+        example_suite.runpytest("--store-durations", "--durations-path", durations_path)
+
+        with open(durations_path) as f:
+            durations = json.load(f)
+
+        assert durations[existing_duration_test_name] != old_value
+        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT
+
+    def test_it_doesnt_remove_old_durations(self, example_suite, durations_path):
+        old_durations = {"test_old1": 1, "test_old2": 2}
+        with open(durations_path, "w") as f:
+            json.dump(old_durations, f)
+
+        example_suite.runpytest("--store-durations", "--durations-path", durations_path)
+
+        with open(durations_path) as f:
+            durations = json.load(f)
+
+        for item in old_durations:
+            assert item in durations.keys()
+        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT + len(old_durations)
+
+    def test_it_removes_old_when_cli_flag_used(self, example_suite, durations_path):
+        old_durations = {"test_old1": 1, "test_old2": 2}
+        with open(durations_path, "w") as f:
+            json.dump(old_durations, f)
+
+        example_suite.runpytest("--store-durations", "--durations-path", durations_path, "--clean-durations")
+
+        with open(durations_path) as f:
+            durations = json.load(f)
+
+        for item in old_durations:
+            assert item not in durations.keys()
+        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT
 
     def test_it_does_not_store_without_flag(self, example_suite, durations_path):
         example_suite.runpytest("--durations-path", durations_path)

@@ -63,6 +63,15 @@ def pytest_addoption(parser: "Parser") -> None:
         default="duration_based_chunks",
         choices=algorithms.Algorithms.names(),
     )
+    group.addoption(
+        "--clean-durations",
+        dest="clean_durations",
+        action="store_true",
+        help=(
+            "Removes the test duration info for tests which are not present "
+            "while running the suite with '--store-durations'."
+        ),
+    )
 
 
 @pytest.mark.tryfirst
@@ -198,11 +207,12 @@ class PytestSplitCachePlugin(Base):
                         test_durations[test_report.nodeid] = 0
                     test_durations[test_report.nodeid] += test_report.duration
 
-        # Update the full cached-durations object
-        for k, v in test_durations.items():
-            self.cached_durations[k] = v
+        if self.config.option.clean_durations:
+            self.cached_durations = dict(test_durations)
+        else:
+            for k, v in test_durations.items():
+                self.cached_durations[k] = v
 
-        # Save durations
         with open(self.config.option.durations_path, "w") as f:
             json.dump(self.cached_durations, f)
 
