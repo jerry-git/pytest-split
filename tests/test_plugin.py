@@ -39,7 +39,7 @@ class TestStoreDurations:
             "test_it_stores.py::test_7",
             "test_it_stores.py::test_8",
             "test_it_stores.py::test_9",
-        ], durations.keys()
+        ]
 
         for duration in durations.values():
             assert isinstance(duration, float)
