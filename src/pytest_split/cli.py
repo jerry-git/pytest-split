@@ -29,6 +29,8 @@ def list_slowest_tests():
 
 
 def _list_slowest_tests(durations: "Dict[str, float]", count: int) -> None:
-    slowest_tests = tuple(sorted(durations.items(), key=lambda item: item[1], reverse=True))[:count]
+    slowest_tests = tuple(
+        sorted(durations.items(), key=lambda item: item[1], reverse=True)
+    )[:count]
     for test, duration in slowest_tests:
         print(f"{duration:.2f} {test}")  # noqa: T001

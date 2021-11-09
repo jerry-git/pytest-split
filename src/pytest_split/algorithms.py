@@ -16,7 +16,9 @@ class TestGroup(NamedTuple):
     duration: float
 
 
-def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[TestGroup]":
+def least_duration(
+    splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]"
+) -> "List[TestGroup]":
     """
     Split tests into groups by runtime.
     It walks the test items, starting with the test with largest duration.
@@ -38,7 +40,9 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
     items_with_durations = [(*tup, i) for i, tup in enumerate(items_with_durations)]
 
     # sort in ascending order
-    sorted_items_with_durations = sorted(items_with_durations, key=lambda tup: tup[1], reverse=True)
+    sorted_items_with_durations = sorted(
+        items_with_durations, key=lambda tup: tup[1], reverse=True
+    )
 
     selected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
     deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
@@ -66,13 +70,17 @@ def least_duration(splits: int, items: "List[nodes.Item]", durations: "Dict[str,
     for i in range(splits):
         # sort the items by their original index to maintain relative ordering
         # we don't care about the order of deselected items
-        s = [item for item, original_index in sorted(selected[i], key=lambda tup: tup[1])]
+        s = [
+            item for item, original_index in sorted(selected[i], key=lambda tup: tup[1])
+        ]
         group = TestGroup(selected=s, deselected=deselected[i], duration=duration[i])
         groups.append(group)
     return groups
 
 
-def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]") -> "List[TestGroup]":
+def duration_based_chunks(
+    splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]"
+) -> "List[TestGroup]":
     """
     Split tests into groups by runtime.
     Ensures tests are split into non-overlapping groups.
@@ -102,13 +110,18 @@ def duration_based_chunks(splits: int, items: "List[nodes.Item]", durations: "Di
                 deselected[i].append(item)
         duration[group_idx] += item_duration
 
-    return [TestGroup(selected=selected[i], deselected=deselected[i], duration=duration[i]) for i in range(splits)]
+    return [
+        TestGroup(selected=selected[i], deselected=deselected[i], duration=duration[i])
+        for i in range(splits)
+    ]
 
 
 def _get_items_with_durations(items, durations):
     durations = _remove_irrelevant_durations(items, durations)
     avg_duration_per_test = _get_avg_duration_per_test(durations)
-    items_with_durations = [(item, durations.get(item.nodeid, avg_duration_per_test)) for item in items]
+    items_with_durations = [
+        (item, durations.get(item.nodeid, avg_duration_per_test)) for item in items
+    ]
     return items_with_durations
 
 
@@ -121,7 +134,9 @@ def _get_avg_duration_per_test(durations: "Dict[str, float]") -> float:
     return avg_duration_per_test
 
 
-def _remove_irrelevant_durations(items: "List[nodes.Item]", durations: "Dict[str, float]") -> "Dict[str, float]":
+def _remove_irrelevant_durations(
+    items: "List[nodes.Item]", durations: "Dict[str, float]"
+) -> "Dict[str, float]":
     # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
     test_ids = [item.nodeid for item in items]
     durations = {name: durations[name] for name in test_ids if name in durations}
