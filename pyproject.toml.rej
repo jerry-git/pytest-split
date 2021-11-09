@@ -1,0 +1,8 @@
+diff a/pyproject.toml b/pyproject.toml	(rejected hunks)
+@@ -88,3 +88,6 @@ no_implicit_optional = true
+ strict_equality = true
+ warn_unused_ignores = true
+ warn_redundant_casts = true
++warn_return_any = true
++check_untyped_defs = true
++show_error_codes = true
