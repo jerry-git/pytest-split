@@ -196,7 +196,7 @@ class TestSplitToSuites:
         }
         if legacy_flag:
             # formats durations to legacy format
-            durations = [list(tup) for tup in durations.items()]
+            durations = [list(tup) for tup in durations.items()]  # type: ignore
 
         with open(durations_path, "w") as f:
             json.dump(durations, f)
