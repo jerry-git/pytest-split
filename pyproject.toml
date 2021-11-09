@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytest-split"
-version = "0.3.3"
+version = "0.4.0"
 description = "Pytest plugin for splitting test suite based on test execution time"
 homepage = 'https://github.com/jerry-git/pytest-split'
 repository = 'https://github.com/jerry-git/pytest-split'
