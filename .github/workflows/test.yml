@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  lint-cruft:
+    name: Check if automatic project update was successful
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fail if .rej files exist as structure update was not successful
+        run: test -z "$(find . -iname '*.rej')"
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/python-poetry-env
+      - run: poetry run pre-commit run --all-files
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/python-poetry-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: poetry run pytest
