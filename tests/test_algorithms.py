@@ -29,7 +29,9 @@ class TestAlgorithms:
         assert third.duration == 1
 
     @pytest.mark.parametrize("algo_name", Algorithms.names())
-    def test__split_tests_handles_tests_in_durations_but_missing_from_items(self, algo_name):
+    def test__split_tests_handles_tests_in_durations_but_missing_from_items(
+        self, algo_name
+    ):
         durations = {"a": 1, "b": 1}
         items = [item(x) for x in ["a"]]
         algo = Algorithms[algo_name].value
@@ -68,7 +70,9 @@ class TestAlgorithms:
             ("least_duration", [[item("a"), item("c")], [item("b"), item("d")]]),
         ],
     )
-    def test__split_tests_calculates_avg_test_duration_only_on_present_tests(self, algo_name, expected):
+    def test__split_tests_calculates_avg_test_duration_only_on_present_tests(
+        self, algo_name, expected
+    ):
         # If the algo includes test e's duration to calculate the averge then
         # a will be expected to take a long time, and so 'a' will become its
         # own group. Intended behaviour is that a gets estimated duration 1 and
@@ -86,8 +90,14 @@ class TestAlgorithms:
     @pytest.mark.parametrize(
         "algo_name, expected",
         [
-            ("duration_based_chunks", [[item("a"), item("b"), item("c"), item("d"), item("e")], []]),
-            ("least_duration", [[item("e")], [item("a"), item("b"), item("c"), item("d")]]),
+            (
+                "duration_based_chunks",
+                [[item("a"), item("b"), item("c"), item("d"), item("e")], []],
+            ),
+            (
+                "least_duration",
+                [[item("e")], [item("a"), item("b"), item("c"), item("d")]],
+            ),
         ],
     )
     def test__split_tests_maintains_relative_order_of_tests(self, algo_name, expected):

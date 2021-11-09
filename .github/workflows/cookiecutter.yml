@@ -1,0 +1,81 @@
+name: Autoupdate project structure
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"  # at the end of every day
+
+jobs:
+  auto-update-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Set credentials for private templates
+        run: |
+          git config --global url."https://api:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://ssh:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://git:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "git@github.com:"
+
+      - name: Install dependencies
+        run: python -m pip install cruft poetry jello tabulate
+
+      - name: Update project structure
+        run: |
+          cruft update -y
+
+      - name: Check if there are changes
+        id: changes
+        uses: UnicornGlobal/has-changes-action@v1.0.11
+
+      - name: apply additional changes and fixes
+        if: steps.changes.outputs.changed == 1
+        run: |
+          poetry lock --no-update  # add new dependencies
+          poetry install
+          poetry run pre-commit run -a || true  # we have to fix other issues manually
+
+      - name: Get template versions
+        id: get_versions
+        if: steps.changes.outputs.changed == 1
+        run: |
+          echo ::set-output name=current_version::$(git show HEAD:.cruft.json | jello -r "_['commit'][:8]")
+          echo ::set-output name=next_version::$(cat .cruft.json | jello -r "_['commit'][:8]")
+
+      - name: Get changelog
+        id: get_changelog
+        if: steps.changes.outputs.changed == 1
+        run: |
+          export TEMPLATE=$(cat .cruft.json | jello -r "_['template']")
+          git clone $TEMPLATE /tmp/template
+          cd /tmp/template
+          body=$((echo "Date;Change;Hash"; git log --pretty=format:"%as;%s;%h" ${{ steps.get_versions.outputs.current_version }}..${{ steps.get_versions.outputs.next_version }}) | tabulate --header --format github -s ';' -)
+          body=$(cat <<EOF
+          Changes from $TEMPLATE
+
+          $body
+          EOF
+          )
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}"
+          echo ::set-output name=changelog::$body
+
+      # behaviour if PR already exists: https://github.com/marketplace/actions/create-pull-request#action-behaviour
+      - name: Create Pull Request
+        env:
+          # a PAT is required to be able to update workflows
+          GITHUB_TOKEN: ${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}
+        if: ${{ steps.changes.outputs.changed == 1 && env.GITHUB_TOKEN != 0 }}
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ env.GITHUB_TOKEN }}
+          commit-message: >-
+            chore: update project structure to ${{ steps.get_versions.outputs.next_version }}
+          title: "[Actions] Auto-Update cookiecutter template"
+          body: ${{ steps.get_changelog.outputs.changelog }}
+          branch: chore/auto-update-project-from-template
+          delete-branch: true

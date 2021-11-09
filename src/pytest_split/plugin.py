@@ -108,7 +108,9 @@ def pytest_configure(config: "Config") -> None:
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
 
     if config.option.store_durations:
-        config.pluginmanager.register(PytestSplitCachePlugin(config), "pytestsplitcacheplugin")
+        config.pluginmanager.register(
+            PytestSplitCachePlugin(config), "pytestsplitcacheplugin"
+        )
 
 
 class Base:
@@ -131,7 +133,9 @@ class Base:
         # from saving durations in a list-of-lists to a dict format
         # Remove this when bumping to v1
         if isinstance(self.cached_durations, list):
-            self.cached_durations = {test_name: duration for test_name, duration in self.cached_durations}
+            self.cached_durations = {
+                test_name: duration for test_name, duration in self.cached_durations
+            }
 
 
 class PytestSplitPlugin(Base):
@@ -148,7 +152,9 @@ class PytestSplitPlugin(Base):
             self.writer.line(message)
 
     @hookimpl(trylast=True)
-    def pytest_collection_modifyitems(self, config: "Config", items: "List[nodes.Item]") -> None:
+    def pytest_collection_modifyitems(
+        self, config: "Config", items: "List[nodes.Item]"
+    ) -> None:
         """
         Collect and select the tests we want to run, and deselect the rest.
         """
@@ -197,7 +203,8 @@ class PytestSplitCachePlugin(Base):
                         continue  # pragma: no cover
                     if (
                         test_report.when in ("teardown", "setup")
-                        and test_report.duration > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
+                        and test_report.duration
+                        > STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD
                     ):
                         # Ignore not legit teardown durations
                         continue  # pragma: no cover
@@ -217,6 +224,8 @@ class PytestSplitCachePlugin(Base):
             json.dump(self.cached_durations, f, sort_keys=True, indent=4)
 
         message = self.writer.markup(
-            "\n\n[pytest-split] Stored test durations in {}".format(self.config.option.durations_path)
+            "\n\n[pytest-split] Stored test durations in {}".format(
+                self.config.option.durations_path
+            )
         )
         self.writer.line(message)

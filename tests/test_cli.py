@@ -20,10 +20,12 @@ def durations_file(tmpdir):
 
 
 def test_slowest_tests(durations_file):
-    with patch("pytest_split.cli.argparse.ArgumentParser", autospec=True) as arg_parser, patch(
-        "sys.stdout", new_callable=StringIO
-    ):
-        arg_parser().parse_args.return_value = argparse.Namespace(durations_path=durations_file, count=3)
+    with patch(
+        "pytest_split.cli.argparse.ArgumentParser", autospec=True
+    ) as arg_parser, patch("sys.stdout", new_callable=StringIO):
+        arg_parser().parse_args.return_value = argparse.Namespace(
+            durations_path=durations_file, count=3
+        )
         cli.list_slowest_tests()
 
         output = sys.stdout.getvalue()
