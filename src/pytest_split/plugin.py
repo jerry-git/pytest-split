@@ -214,7 +214,7 @@ class PytestSplitCachePlugin(Base):
                 self.cached_durations[k] = v
 
         with open(self.config.option.durations_path, "w") as f:
-            json.dump(self.cached_durations, f)
+            json.dump(self.cached_durations, f, sort_keys=True, indent=4)
 
         message = self.writer.markup(
             "\n\n[pytest-split] Stored test durations in {}".format(self.config.option.durations_path)

@@ -30,6 +30,7 @@ class TestStoreDurations:
 
         assert list(durations.keys()) == [
             "test_it_stores.py::test_1",
+            "test_it_stores.py::test_10",
             "test_it_stores.py::test_2",
             "test_it_stores.py::test_3",
             "test_it_stores.py::test_4",
@@ -38,7 +39,6 @@ class TestStoreDurations:
             "test_it_stores.py::test_7",
             "test_it_stores.py::test_8",
             "test_it_stores.py::test_9",
-            "test_it_stores.py::test_10",
         ]
 
         for duration in durations.values():
