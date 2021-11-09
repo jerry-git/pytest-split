@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from typing import Dict
 
 
-def list_slowest_tests():
+def list_slowest_tests() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--durations-path",
