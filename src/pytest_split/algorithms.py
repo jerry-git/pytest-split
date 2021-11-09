@@ -37,14 +37,16 @@ def least_duration(
     items_with_durations = _get_items_with_durations(items, durations)
 
     # add index of item in list
-    items_with_durations = [(*tup, i) for i, tup in enumerate(items_with_durations)]
+    items_with_durations_indexed = [
+        (*tup, i) for i, tup in enumerate(items_with_durations)
+    ]
 
     # sort in ascending order
     sorted_items_with_durations = sorted(
-        items_with_durations, key=lambda tup: tup[1], reverse=True
+        items_with_durations_indexed, key=lambda tup: tup[1], reverse=True
     )
 
-    selected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
+    selected: "List[List[Tuple[nodes.Item, int]]]" = [[] for i in range(splits)]
     deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
     duration: "List[float]" = [0 for i in range(splits)]
 
@@ -116,7 +118,9 @@ def duration_based_chunks(
     ]
 
 
-def _get_items_with_durations(items, durations):
+def _get_items_with_durations(
+    items: "List[nodes.Item]", durations: "Dict[str, float]"
+) -> "List[Tuple[nodes.Item, float]]":
     durations = _remove_irrelevant_durations(items, durations)
     avg_duration_per_test = _get_avg_duration_per_test(durations)
     items_with_durations = [
