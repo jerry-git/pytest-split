@@ -10,8 +10,7 @@
 
 **Documentation**: [https://jerry-git.github.io/pytest-split](https://jerry-git.github.io/pytest-split)
 
-**Source Code**: [https://github.com/jerry-git/pytest-split](https
-://github.com/jerry-git/pytest-split)
+**Source Code**: [https://github.com/jerry-git/pytest-split](https://github.com/jerry-git/pytest-split)
 
 **PyPI**: [https://pypi.org/project/pytest-split/](https://pypi.org/project/pytest-split/)
 
@@ -119,7 +118,7 @@ Trigger the [Draft release workflow](https://github.com/jerry-git/pytest-split/a
 
 Find the draft release from the
 [GitHub releases](https://github.com/jerry-git/pytest-split/releases) and publish it. When
- a release is published, it'll trigger [release](.github/workflows/release.yml) workflow which creates PyPI
+ a release is published, it'll trigger [release](https://github.com/jerry-git/pytest-split/blob/master/.github/workflows/release.yml) workflow which creates PyPI
  release and deploys updated documentation.
 
 ### Pre-commit
