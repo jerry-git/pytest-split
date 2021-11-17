@@ -14,12 +14,6 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Set credentials for private templates
-        run: |
-          git config --global url."https://api:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          git config --global url."https://ssh:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
-          git config --global url."https://git:${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}@github.com/".insteadOf "git@github.com:"
-
       - name: Install dependencies
         run: python -m pip install cruft poetry jello tabulate
 
