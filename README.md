@@ -67,8 +67,8 @@ Each algorithm makes different tradeoffs, but generally `least_duration` should 
 
 | Algorithm      | Maintains Absolute Order | Maintains Relative Order | Split Quality |
 |----------------|--------------------------|--------------------------|---------------|
-| duration_based_chunks       | :heavy_check_mark:       | :heavy_check_mark:       | Good          |
-| least_duration | :heavy_multiplication_x: | :heavy_check_mark:       | Better        |
+| duration_based_chunks | ✅                | ✅                        | Good          |
+| least_duration | ❌                       | ✅                        | Better        |
 
 Explanation of the terms in the table:
 * Absolute Order: whether each group contains all tests between first and last element in the same order as the original list of tests
