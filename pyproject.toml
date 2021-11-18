@@ -54,6 +54,7 @@ pymdown-extensions = "*"
 pytest = "*"
 pytest-cov = "*"
 python-kacl = "*"
+pyupgrade = "*"
 tryceratops = "*"
 
 [build-system]
