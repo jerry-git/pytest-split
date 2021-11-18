@@ -124,7 +124,7 @@ class Base:
         self.writer = create_terminal_writer(self.config)
 
         try:
-            with open(config.option.durations_path, "r") as f:
+            with open(config.option.durations_path) as f:
                 self.cached_durations = json.loads(f.read())
         except FileNotFoundError:
             self.cached_durations = {}
