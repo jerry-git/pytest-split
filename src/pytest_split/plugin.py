@@ -7,6 +7,7 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
+from pytest_split.algorithms import TestGroup
 
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union
@@ -183,7 +184,7 @@ class PytestSplitPlugin(Base):
         return None
 
 
-def _reorganize_broken_up_ipynbs(group, items):
+def _reorganize_broken_up_ipynbs(group: TestGroup, items: list):
     """
     Ensures that group doesn't contain partial IPy notebook cells.
 
@@ -219,7 +220,7 @@ def _reorganize_broken_up_ipynbs(group, items):
                         group.deselected.remove(item)
 
 
-def _is_ipy_notebook(node_id):
+def _is_ipy_notebook(node_id: str):
     """
     Returns True if node_id is an IPython notebook, otherwise False.
     """
@@ -227,7 +228,7 @@ def _is_ipy_notebook(node_id):
     return fpath.endswith(".ipynb")
 
 
-def _get_boundary_indices(item_node_ids, idx):
+def _get_boundary_indices(item_node_ids: list, idx: int):
     """
     Returns start/end indices of the file containing node_id at ``idx``.
 
