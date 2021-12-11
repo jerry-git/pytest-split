@@ -165,6 +165,8 @@ class PytestSplitPlugin(Base):
         groups = algo(splits, items, self.cached_durations)
         group = groups[group_idx - 1]
 
+        _reorganize_broken_up_ipynbs(group, items)
+
         items[:] = group.selected
         config.hook.pytest_deselected(items=group.deselected)
 
