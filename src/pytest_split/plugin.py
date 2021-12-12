@@ -7,6 +7,7 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
+from pytest_split.ipynb_compatibility import _reorganize_broken_up_ipynbs
 
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
     from _pytest.config.argparsing import Parser
     from _pytest.main import ExitCode
 
-    from pytest_split.algorithms import TestGroup
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
@@ -183,60 +183,6 @@ class PytestSplitPlugin(Base):
             )
         )
         return None
-
-
-def _reorganize_broken_up_ipynbs(group: "TestGroup", items: list) -> None:
-    """
-    Ensures that group doesn't contain partial IPy notebook cells.
-
-    ``pytest-split`` might, in principle, break up the cells of an
-    IPython notebook into different test groups, in which case the tests
-    most likely fail (for starters, libraries are imported in Cell 0, so
-    all subsequent calls to the imported libraries in the following cells
-    will raise ``NameError``).
-
-    """
-    item_node_ids = [item.nodeid for item in items]
-
-    # Deal with broken up notebooks at the beginning of the test group
-    if not group.selected or not _is_ipy_notebook(group.selected[0].nodeid):
-        return
-    first = group.selected[0].nodeid
-    sibilings = _find_sibiling_ipynb_cells(first, item_node_ids)
-    if first != sibilings[0]:
-        for item in list(group.selected):
-            if item.nodeid in sibilings:
-                group.deselected.append(item)
-                group.selected.remove(item)
-
-    # Deal with broken up notebooks at the end of the test group
-    if not group.selected or not _is_ipy_notebook(group.selected[-1].nodeid):
-        return
-    last = group.selected[-1].nodeid
-    sibilings = _find_sibiling_ipynb_cells(last, item_node_ids)
-    if last != sibilings[-1]:
-        for item in list(group.deselected):
-            if item.nodeid in sibilings:
-                group.deselected.remove(item)
-                group.selected.append(item)
-
-
-def _find_sibiling_ipynb_cells(
-    ipynb_node_id: str, item_node_ids: "List[str]"
-) -> "List[str]":
-    """
-    Returns all sibiling IPyNb cells given an IPyNb cell nodeid.
-    """
-    fpath = ipynb_node_id.split("::")[0]
-    return [item for item in item_node_ids if fpath in item]
-
-
-def _is_ipy_notebook(node_id: str) -> bool:
-    """
-    Returns True if node_id is an IPython notebook, otherwise False.
-    """
-    fpath = node_id.split("::")[0]
-    return fpath.endswith(".ipynb")
 
 
 class PytestSplitCachePlugin(Base):
