@@ -7,7 +7,6 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
-from pytest_split.algorithms import TestGroup
 
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union
@@ -16,6 +15,8 @@ if TYPE_CHECKING:
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.main import ExitCode
+
+    from pytest_split.algorithms import TestGroup
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
@@ -184,7 +185,7 @@ class PytestSplitPlugin(Base):
         return None
 
 
-def _reorganize_broken_up_ipynbs(group: TestGroup, items: list):
+def _reorganize_broken_up_ipynbs(group: "TestGroup", items: list) -> None:
     """
     Ensures that group doesn't contain partial IPy notebook cells.
 
@@ -198,54 +199,44 @@ def _reorganize_broken_up_ipynbs(group: TestGroup, items: list):
     item_node_ids = [item.nodeid for item in items]
 
     # Deal with broken up notebooks at the beginning of the test group
-    if group.selected:
-        start = items.index(group.selected[0])
-        if _is_ipy_notebook(item_node_ids[start]):
-            i, j = _get_boundary_indices(item_node_ids, start)
-            if start != i:
-                for item in list(group.selected):
-                    if item in items[i:j]:
-                        group.deselected.append(item)
-                        group.selected.remove(item)
+    if not group.selected or not _is_ipy_notebook(group.selected[0].nodeid):
+        return
+    first = group.selected[0].nodeid
+    sibilings = _find_sibiling_ipynb_cells(first, item_node_ids)
+    if first != sibilings[0]:
+        for item in list(group.selected):
+            if item.nodeid in sibilings:
+                group.deselected.append(item)
+                group.selected.remove(item)
 
     # Deal with broken up notebooks at the end of the test group
-    if group.selected:
-        end = items.index(group.selected[-1])
-        if _is_ipy_notebook(item_node_ids[end]):
-            i, j = _get_boundary_indices(item_node_ids, end)
-            if end != j - 1:
-                for item in list(group.deselected):
-                    if item in items[i:j]:
-                        group.selected.append(item)
-                        group.deselected.remove(item)
+    if not group.selected or not _is_ipy_notebook(group.selected[-1].nodeid):
+        return
+    last = group.selected[-1].nodeid
+    sibilings = _find_sibiling_ipynb_cells(last, item_node_ids)
+    if last != sibilings[-1]:
+        for item in list(group.deselected):
+            if item.nodeid in sibilings:
+                group.deselected.remove(item)
+                group.selected.append(item)
 
 
-def _is_ipy_notebook(node_id: str):
+def _find_sibiling_ipynb_cells(
+    ipynb_node_id: str, item_node_ids: "List[str]"
+) -> "List[str]":
+    """
+    Returns all sibiling IPyNb cells given an IPyNb cell nodeid.
+    """
+    fpath = ipynb_node_id.split("::")[0]
+    return [item for item in item_node_ids if fpath in item]
+
+
+def _is_ipy_notebook(node_id: str) -> bool:
     """
     Returns True if node_id is an IPython notebook, otherwise False.
     """
     fpath = node_id.split("::")[0]
     return fpath.endswith(".ipynb")
-
-
-def _get_boundary_indices(item_node_ids: list, idx: int):
-    """
-    Returns start/end indices of the file containing node_id at ``idx``.
-
-    Suppose ``idx`` corresponds to ``foo.py::func3``, where ``foo.py``
-    contains ``func1``, ``func2``, ``func3``, and ``func4``. In this case,
-    this function returns ``i`` and ``j``, such that
-    ``item_node_ids[i:j]`` returns:
-
-    .. code-block::
-
-        [foo.py::func1, foo.py::func2, foo.py::func3, foo.py::func4]
-
-    """
-    ipynb_node_id = item_node_ids[idx]
-    fpath = ipynb_node_id.split("::")[0]
-    ipynb_ids = [i for i, item in enumerate(item_node_ids) if fpath in item]
-    return [ipynb_ids[0], ipynb_ids[-1] + 1]  # since Python indexing is [a, b)
 
 
 class PytestSplitCachePlugin(Base):
