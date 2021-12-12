@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pytest_split.algorithms import TestGroup
 
 
-def _reorganize_broken_up_ipynbs(group: "TestGroup", items: "List[nodes.Item]") -> None:
+def ensure_ipynb_compatibility(group: "TestGroup", items: "List[nodes.Item]") -> None:
     """
     Ensures that group doesn't contain partial IPy notebook cells.
 
@@ -44,7 +44,9 @@ def _reorganize_broken_up_ipynbs(group: "TestGroup", items: "List[nodes.Item]") 
                 group.selected.append(item)
 
 
-def _find_sibiling_ipynb_cells(ipynb_node_id: str, item_node_ids: "List[str]") -> "List[str]":
+def _find_sibiling_ipynb_cells(
+    ipynb_node_id: str, item_node_ids: "List[str]"
+) -> "List[str]":
     """
     Returns all sibiling IPyNb cells given an IPyNb cell nodeid.
     """

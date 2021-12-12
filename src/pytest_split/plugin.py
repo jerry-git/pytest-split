@@ -7,7 +7,7 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
-from pytest_split.ipynb_compatibility import _reorganize_broken_up_ipynbs
+from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union
@@ -167,7 +167,7 @@ class PytestSplitPlugin(Base):
         groups = algo(splits, items, self.cached_durations)
         group = groups[group_idx - 1]
 
-        _reorganize_broken_up_ipynbs(group, items)
+        ensure_ipynb_compatibility(group, items)
 
         items[:] = group.selected
         config.hook.pytest_deselected(items=group.deselected)
