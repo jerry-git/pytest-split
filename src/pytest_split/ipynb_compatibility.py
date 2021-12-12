@@ -19,11 +19,12 @@ def ensure_ipynb_compatibility(group: "TestGroup", items: "List[nodes.Item]") ->
     will raise ``NameError``).
 
     """
+    if not group.selected or not _is_ipy_notebook(group.selected[0].nodeid):
+        return
+
     item_node_ids = [item.nodeid for item in items]
 
     # Deal with broken up notebooks at the beginning of the test group
-    if not group.selected or not _is_ipy_notebook(group.selected[0].nodeid):
-        return
     first = group.selected[0].nodeid
     siblings = _find_sibiling_ipynb_cells(first, item_node_ids)
     if first != siblings[0]:
@@ -32,9 +33,10 @@ def ensure_ipynb_compatibility(group: "TestGroup", items: "List[nodes.Item]") ->
                 group.deselected.append(item)
                 group.selected.remove(item)
 
-    # Deal with broken up notebooks at the end of the test group
     if not group.selected or not _is_ipy_notebook(group.selected[-1].nodeid):
         return
+
+    # Deal with broken up notebooks at the end of the test group
     last = group.selected[-1].nodeid
     siblings = _find_sibiling_ipynb_cells(last, item_node_ids)
     if last != siblings[-1]:
