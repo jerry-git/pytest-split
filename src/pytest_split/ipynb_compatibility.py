@@ -3,12 +3,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import List
 
-    from _pytest import nodes
-
     from pytest_split.algorithms import TestGroup
 
 
-def ensure_ipynb_compatibility(group: "TestGroup", items: "List[nodes.Item]") -> None:
+def ensure_ipynb_compatibility(group: "TestGroup", items: list) -> None:
     """
     Ensures that group doesn't contain partial IPy notebook cells.
 
