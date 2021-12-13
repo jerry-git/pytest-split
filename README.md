@@ -65,8 +65,7 @@ Lists the slowest tests based on the information stored in the test durations fi
 
 ![image](https://user-images.githubusercontent.com/14086031/145830494-07afcaf0-5a0f-4817-b9ee-f84a459652a8.png)
 
-where letters A to E refer to an individual IPython Notebook, and the numbers refer
-to the corresponding cell number.
+where the letters (A to E) refer to individual IPython Notebooks, and the numbers refer to the corresponding cell number.
 
 ## Splitting algorithms
 The plugin supports multiple algorithms to split tests into groups.
