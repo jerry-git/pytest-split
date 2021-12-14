@@ -7,6 +7,7 @@ from _pytest.config import create_terminal_writer, hookimpl
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
+from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
 if TYPE_CHECKING:
     from typing import Dict, List, Optional, Union
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.main import ExitCode
+
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
 STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
@@ -164,6 +166,8 @@ class PytestSplitPlugin(Base):
         algo = algorithms.Algorithms[config.option.splitting_algorithm].value
         groups = algo(splits, items, self.cached_durations)
         group = groups[group_idx - 1]
+
+        ensure_ipynb_compatibility(group, items)
 
         items[:] = group.selected
         config.hook.pytest_deselected(items=group.deselected)
