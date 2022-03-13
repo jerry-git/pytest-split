@@ -32,7 +32,7 @@ repos:
         types: [python]
       - id: pyupgrade
         name: pyupgrade
-        entry: pyupgrade --py37-plus
+        entry: poetry run pyupgrade --py37-plus
         language: system
         types: [python]
       - id: mypy

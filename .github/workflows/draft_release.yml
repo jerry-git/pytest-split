@@ -16,12 +16,14 @@ jobs:
       - uses: ./.github/actions/python-poetry-env
       - name: Update version
         id: updated_version
+        shell: bash
         run: |
           poetry version ${{ github.event.inputs.version }}
           version=$(poetry version --short)
-          echo ::set-output name=version::$version
+          echo ::set-output name="version::$version"
       - name: Update changelog
         id: changelog
+        shell: bash
         run: |
           poetry run kacl-cli release ${{ steps.updated_version.outputs.version }} --modify --auto-link
           echo "" >> CHANGELOG.md
@@ -29,7 +31,7 @@ jobs:
           body="${body//'%'/'%25'}"
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
-          echo ::set-output name=body::$body
+          echo ::set-output name="body::$body"
       - name: Commit changes
         uses: EndBug/add-and-commit@v7
         with:

@@ -18,11 +18,12 @@ jobs:
         id: check_for_outdated_dependencies
         run: |
           body=$(poetry show -o -n)
-          echo ::set-output name=body::$body
+          echo ::set-output name="body::$body"
 
       - name: Format PR message
         if: ${{ steps.check_for_outdated_dependencies.outputs.body != 0 }}
         id: get_outdated_dependencies
+        shell: bash
         run: |
           body=$(poetry show -o -n | sed 's/(!)//' | awk 'BEGIN {print "Package","Used","Update"}; {print $1,$2,$3}' | tabulate --header --format github -)
           body=$(cat <<EOF
@@ -34,7 +35,7 @@ jobs:
           body="${body//'%'/'%25'}"
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
-          echo ::set-output name=body::$body
+          echo ::set-output name="body::$body"
 
       - name: Update outdated packages
         if: ${{ steps.check_for_outdated_dependencies.outputs.body != 0 }}
