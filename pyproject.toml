@@ -33,7 +33,7 @@ include = ['LICENCE']
 
 [tool.poetry.dependencies]
 python = ">=3.7.1, <4.0"
-pytest = "^5 | ^6"
+pytest = "^5 | ^6 | ^7"
 
 [tool.poetry.dev-dependencies]
 autoflake = "*"
