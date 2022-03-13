@@ -124,6 +124,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "eradicate"
+version = "2.0.0"
+description = "Removes commented-out code."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "filelock"
 version = "3.6.0"
 description = "A platform independent file lock."
@@ -204,6 +212,19 @@ pycodestyle = "*"
 six = "*"
 
 [[package]]
+name = "flake8-eradicate"
+version = "1.2.0"
+description = "Flake8 plugin to find commented out code"
+category = "dev"
+optional = false
+python-versions = ">=3.6,<4.0"
+
+[package.dependencies]
+attrs = "*"
+eradicate = ">=2.0,<3.0"
+flake8 = ">=3.5,<5"
+
+[[package]]
 name = "flake8-logging-format"
 version = "0.6.0"
 description = "Flake8 extension to validate (lack of) logging format strings"
@@ -218,17 +239,6 @@ description = "Polyfill package for Flake8 plugins"
 category = "dev"
 optional = false
 python-versions = "*"
-
-[package.dependencies]
-flake8 = "*"
-
-[[package]]
-name = "flake8-type-checking"
-version = "1.0.3"
-description = "A flake8 plugin for managing type-checking imports & forward references"
-category = "dev"
-optional = false
-python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
 flake8 = "*"
@@ -879,7 +889,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <4.0"
-content-hash = "6f5c0b8913e4810f627b770d9b725795a9a2a662b3716dbb86ef54623471926a"
+content-hash = "ac5461fdd3ad8d4326ec1ef320899a8201422c061ef6b1f849945107aa0cfdb7"
 
 [metadata.files]
 astunparse = [
@@ -985,6 +995,9 @@ distlib = [
     {file = "distlib-0.3.4-py2.py3-none-any.whl", hash = "sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b"},
     {file = "distlib-0.3.4.zip", hash = "sha256:e4b58818180336dc9c529bfb9a0b58728ffc09ad92027a3f30b7cd91e3458579"},
 ]
+eradicate = [
+    {file = "eradicate-2.0.0.tar.gz", hash = "sha256:27434596f2c5314cc9b31410c93d8f7e8885747399773cd088d3adea647a60c8"},
+]
 filelock = [
     {file = "filelock-3.6.0-py3-none-any.whl", hash = "sha256:f8314284bfffbdcfa0ff3d7992b023d4c628ced6feb957351d4c48d059f56bc0"},
     {file = "filelock-3.6.0.tar.gz", hash = "sha256:9cd540a9352e432c7246a48fe4e8712b10acb1df2ad1f30e8c070b82ae1fed85"},
@@ -1009,16 +1022,16 @@ flake8-debugger = [
     {file = "flake8-debugger-4.0.0.tar.gz", hash = "sha256:e43dc777f7db1481db473210101ec2df2bd39a45b149d7218a618e954177eda6"},
     {file = "flake8_debugger-4.0.0-py3-none-any.whl", hash = "sha256:82e64faa72e18d1bdd0000407502ebb8ecffa7bc027c62b9d4110ce27c091032"},
 ]
+flake8-eradicate = [
+    {file = "flake8-eradicate-1.2.0.tar.gz", hash = "sha256:acaa1b6839ff00d284b805c432fdfa6047262bd15a5504ec945797e87b4de1fa"},
+    {file = "flake8_eradicate-1.2.0-py3-none-any.whl", hash = "sha256:51dc660d0c1c1ed93af0f813540bbbf72ab2d3466c14e3f3bac371c618b6042f"},
+]
 flake8-logging-format = [
     {file = "flake8-logging-format-0.6.0.tar.gz", hash = "sha256:ca5f2b7fc31c3474a0aa77d227e022890f641a025f0ba664418797d979a779f8"},
 ]
 flake8-polyfill = [
     {file = "flake8-polyfill-1.0.2.tar.gz", hash = "sha256:e44b087597f6da52ec6393a709e7108b2905317d0c0b744cdca6208e670d8eda"},
     {file = "flake8_polyfill-1.0.2-py2.py3-none-any.whl", hash = "sha256:12be6a34ee3ab795b19ca73505e7b55826d5f6ad7230d31b18e106400169b9e9"},
-]
-flake8-type-checking = [
-    {file = "flake8-type-checking-1.0.3.tar.gz", hash = "sha256:a236558b2b001b2f4909713342306c22d5c1fe8607053c3cf9d5abb13ba82ec7"},
-    {file = "flake8_type_checking-1.0.3-py3-none-any.whl", hash = "sha256:f76e71b0d9aae4dffe163dd62c2eacabbb3f94649cdd1f1bc6d16af34a2b7849"},
 ]
 ghp-import = [
     {file = "ghp-import-2.0.2.tar.gz", hash = "sha256:947b3771f11be850c852c64b561c600fdddf794bab363060854c1ee7ad05e071"},

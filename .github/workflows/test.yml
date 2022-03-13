@@ -7,6 +7,17 @@ on:
       - "**"
 
 jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
+      - name: Check workflow files
+        run: ./actionlint -color
+        shell: bash
+
   lint-cruft:
     name: Check if automatic project update was successful
     runs-on: ubuntu-latest

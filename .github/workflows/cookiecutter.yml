@@ -35,18 +35,22 @@ jobs:
       - name: Get template versions
         id: get_versions
         if: steps.changes.outputs.changed == 1
+        shell: bash
         run: |
-          echo ::set-output name=current_version::$(git show HEAD:.cruft.json | jello -r "_['commit'][:8]")
-          echo ::set-output name=next_version::$(cat .cruft.json | jello -r "_['commit'][:8]")
+          CURRENT_VERSION=$(git show HEAD:.cruft.json | jello -r "_['commit'][:8]")
+          NEXT_VERSION=$(jello -r "_['commit'][:8]" < .cruft.json)
+          echo ::set-output name="current_version::$CURRENT_VERSION"
+          echo ::set-output name="next_version::$NEXT_VERSION"
 
       - name: Get changelog
         id: get_changelog
         if: steps.changes.outputs.changed == 1
+        shell: bash
         run: |
-          export TEMPLATE=$(cat .cruft.json | jello -r "_['template']")
-          git clone $TEMPLATE /tmp/template
+          TEMPLATE=$(jello -r "_['template']" < .cruft.json)
+          git clone "$TEMPLATE" /tmp/template
           cd /tmp/template
-          body=$((echo "Date;Change;Hash"; git log --pretty=format:"%as;%s;%h" ${{ steps.get_versions.outputs.current_version }}..${{ steps.get_versions.outputs.next_version }}) | tabulate --header --format github -s ';' -)
+          body=$( (echo "Date;Change;Hash"; git log --pretty=format:"%as;%s;%h" ${{ steps.get_versions.outputs.current_version }}..${{ steps.get_versions.outputs.next_version }}) | tabulate --header --format github -s ';' -)
           body=$(cat <<EOF
           Changes from $TEMPLATE
 
@@ -56,7 +60,7 @@ jobs:
           body="${body//'%'/'%25'}"
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
-          echo ::set-output name=changelog::$body
+          echo ::set-output name="changelog::$body"
 
       # behaviour if PR already exists: https://github.com/marketplace/actions/create-pull-request#action-behaviour
       - name: Create Pull Request
