@@ -244,6 +244,17 @@ python-versions = "*"
 flake8 = "*"
 
 [[package]]
+name = "flake8-type-checking"
+version = "1.0.3"
+description = "A flake8 plugin for managing type-checking imports & forward references"
+category = "dev"
+optional = false
+python-versions = ">=3.7,<4.0"
+
+[package.dependencies]
+flake8 = "*"
+
+[[package]]
 name = "ghp-import"
 version = "2.0.2"
 description = "Copy your docs directly to the gh-pages branch."
@@ -889,7 +900,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <4.0"
-content-hash = "ac5461fdd3ad8d4326ec1ef320899a8201422c061ef6b1f849945107aa0cfdb7"
+content-hash = "21d0f64542d4ff96964a0e5b66e96e86492c91ea8e76db3c954b8de4b30bd960"
 
 [metadata.files]
 astunparse = [
@@ -1032,6 +1043,10 @@ flake8-logging-format = [
 flake8-polyfill = [
     {file = "flake8-polyfill-1.0.2.tar.gz", hash = "sha256:e44b087597f6da52ec6393a709e7108b2905317d0c0b744cdca6208e670d8eda"},
     {file = "flake8_polyfill-1.0.2-py2.py3-none-any.whl", hash = "sha256:12be6a34ee3ab795b19ca73505e7b55826d5f6ad7230d31b18e106400169b9e9"},
+]
+flake8-type-checking = [
+    {file = "flake8-type-checking-1.0.3.tar.gz", hash = "sha256:a236558b2b001b2f4909713342306c22d5c1fe8607053c3cf9d5abb13ba82ec7"},
+    {file = "flake8_type_checking-1.0.3-py3-none-any.whl", hash = "sha256:f76e71b0d9aae4dffe163dd62c2eacabbb3f94649cdd1f1bc6d16af34a2b7849"},
 ]
 ghp-import = [
     {file = "ghp-import-2.0.2.tar.gz", hash = "sha256:947b3771f11be850c852c64b561c600fdddf794bab363060854c1ee7ad05e071"},
