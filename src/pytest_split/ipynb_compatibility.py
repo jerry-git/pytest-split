@@ -48,7 +48,7 @@ def _find_sibiling_ipynb_cells(
     ipynb_node_id: str, item_node_ids: "List[str]"
 ) -> "List[str]":
     """
-    Returns all sibiling IPyNb cells given an IPyNb cell nodeid.
+    Returns all sibling IPyNb cells given an IPyNb cell nodeid.
     """
     fpath = ipynb_node_id.split("::")[0]
     return [item for item in item_node_ids if fpath in item]
