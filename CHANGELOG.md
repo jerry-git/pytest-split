@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-04-22
 ### Fixed
 - The `least_duration` algorithm should now split deterministically regardless of starting test order.
   This should fix the main problem when running with test-randomization packages such as `pytest-randomly` or `pytest-random-order`
@@ -28,7 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Durations file content in prettier format, see https://github.com/jerry-git/pytest-split/pull/31
 
-[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.7.0...master
+[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.8.0...master
+[0.8.0]: https://github.com/jerry-git/pytest-split/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/jerry-git/pytest-split/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/jerry-git/pytest-split/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/jerry-git/pytest-split/compare/0.4.0...0.5.0
