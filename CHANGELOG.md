@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- The `least_duration` algorithm should now split deterministically regardless of starting test order.
+  This should fix the main problem when running with test-randomization packages such as `pytest-randomly` or `pytest-random-order`
+  See #52
+
 ## [0.7.0] - 2022-03-13
 ### Added
 - Support for pytest 7.x, see https://github.com/jerry-git/pytest-split/pull/47
