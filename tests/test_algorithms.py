@@ -1,6 +1,12 @@
+import itertools
 from collections import namedtuple
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from typing import List, Set
+    from _pytest.nodes import Item
 
 from pytest_split.algorithms import Algorithms
 
@@ -110,3 +116,18 @@ class TestAlgorithms:
         expected_first, expected_second = expected
         assert first.selected == expected_first
         assert second.selected == expected_second
+
+    def test__split_tests_same_set_regardless_of_order(self):
+        """NOTE: only least_duration does this correctly"""
+        tests = ["a", "b", "c", "d", "e", "f", "g"]
+        durations = {t: 1 for t in tests}
+        items = [item(t) for t in tests]
+        algo = Algorithms["least_duration"].value
+        for n in (2, 3, 4):
+            selected_each: "List[Set[Item]]" = [set() for _ in range(n)]
+            for order in itertools.permutations(items):
+                splits = algo(splits=n, items=order, durations=durations)
+                for i, group in enumerate(splits):
+                    if not selected_each[i]:
+                        selected_each[i] = set(group.selected)
+                    assert selected_each[i] == set(group.selected)

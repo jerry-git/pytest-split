@@ -27,7 +27,7 @@ This is of course a fundamental problem in the suite itself but sometimes it's n
 Additionally, `pytest-split` may be a better fit in some use cases considering distributed execution.
 
 ## Installation
-```
+```sh
 pip install pytest-split
 ```
 
@@ -35,12 +35,12 @@ pip install pytest-split
 First we have to store test durations from a complete test suite run.
 This produces .test_durations file which should be stored in the repo in order to have it available during future test runs.
 The file path is configurable via `--durations-path` CLI option.
-```
+```sh
 pytest --store-durations
 ```
 
 Then we can have as many splits as we want:
-```
+```sh
 pytest --splits 3 --group 1
 pytest --splits 3 --group 2
 pytest --splits 3 --group 3
@@ -59,7 +59,10 @@ Lists the slowest tests based on the information stored in the test durations fi
  information.
 
 ## Interactions with other pytest plugins
-* [`pytest-random-order`](https://github.com/jbasko/pytest-random-order): ⚠️ The **default settings** of that plugin (setting only `--random-order` to activate it) are **incompatible** with `pytest-split`. Test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all. Instead, a global random seed needs to be computed before running the tests (for example using `$RANDOM` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.
+* [`pytest-random-order`](https://github.com/jbasko/pytest-random-order) and [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly):
+   ⚠️ `pytest-split` running with the `duration_based_chunks` algorithm is **incompatible** with test-order-randomization plugins.
+  Test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all.
+  Instead, a global random seed needs to be computed before running the tests (for example using `$RANDOM` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.
 
 * [`nbval`](https://github.com/computationalmodelling/nbval): `pytest-split` could, in principle, break up a single IPython Notebook into different test groups. This most likely causes broken up pieces to fail (for the very least, package `import`s are usually done at Cell 1, and so, any broken up piece that doesn't contain Cell 1 will certainly fail). To avoid this, after splitting step is done, test groups are reorganized based on a simple algorithm illustrated in the following cartoon:
 
@@ -71,14 +74,15 @@ where the letters (A to E) refer to individual IPython Notebooks, and the number
 The plugin supports multiple algorithms to split tests into groups.
 Each algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.
 
-| Algorithm      | Maintains Absolute Order | Maintains Relative Order | Split Quality |
-|----------------|--------------------------|--------------------------|---------------|
-| duration_based_chunks | ✅                | ✅                        | Good          |
-| least_duration | ❌                       | ✅                        | Better        |
+| Algorithm      | Maintains Absolute Order | Maintains Relative Order | Split Quality | Works with random ordering |
+|----------------|--------------------------|--------------------------|---------------|----------------------------|
+| duration_based_chunks | ✅                | ✅                       | Good          | ❌                         |
+| least_duration | ❌                       | ✅                       | Better        | ✅                         |
 
 Explanation of the terms in the table:
 * Absolute Order: whether each group contains all tests between first and last element in the same order as the original list of tests
 * Relative Order: whether each test in each group has the same relative order to its neighbours in the group as in the original list of tests
+* Works with random ordering: whether the algorithm works with test-shuffling tools such as [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly)
 
 The `duration_based_chunks` algorithm aims to find optimal boundaries for the list of tests and every test group contains all tests between the start and end boundary.
 The `least_duration` algorithm walks the list of tests and assigns each test to the group with the smallest current duration.

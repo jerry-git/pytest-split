@@ -41,14 +41,19 @@ def least_duration(
         (*tup, i) for i, tup in enumerate(items_with_durations)
     ]
 
+    # Sort by name to ensure it's always the same order
+    items_with_durations_indexed = sorted(
+        items_with_durations_indexed, key=lambda tup: str(tup[0])
+    )
+
     # sort in ascending order
     sorted_items_with_durations = sorted(
         items_with_durations_indexed, key=lambda tup: tup[1], reverse=True
     )
 
-    selected: "List[List[Tuple[nodes.Item, int]]]" = [[] for i in range(splits)]
-    deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
-    duration: "List[float]" = [0 for i in range(splits)]
+    selected: "List[List[Tuple[nodes.Item, int]]]" = [[] for _ in range(splits)]
+    deselected: "List[List[nodes.Item]]" = [[] for _ in range(splits)]
+    duration: "List[float]" = [0 for _ in range(splits)]
 
     # create a heap of the form (summed_durations, group_index)
     heap: "List[Tuple[float, int]]" = [(0, i) for i in range(splits)]
