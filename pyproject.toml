@@ -34,7 +34,7 @@ include = ['LICENCE']
 [tool.poetry.dependencies]
 python = ">=3.7.1, <4.0"
 pytest = "^5 | ^6 | ^7"
-importlib-metadata = "!=4.2.0"
+
 
 [tool.poetry.dev-dependencies]
 autoflake = "*"
@@ -47,6 +47,7 @@ flake8-debugger = "*"
 flake8-eradicate = "*"
 flake8-logging-format = "*"
 flake8-type-checking = "*"
+importlib-metadata = "==4.11.*"
 isort = "*"
 mkdocstrings = "*"
 mkdocs-material = "*"
