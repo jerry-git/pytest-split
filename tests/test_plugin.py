@@ -8,6 +8,9 @@ from _pytest.main import ExitCode
 pytest_plugins = ["pytester"]
 
 EXAMPLE_SUITE_TEST_COUNT = 10
+EXAMPLE_SUITE_KEY_COUNT = (
+    EXAMPLE_SUITE_TEST_COUNT + 1
+)  # plus one for the __comment__ header
 
 
 @pytest.fixture
@@ -34,6 +37,7 @@ class TestStoreDurations:
             durations = json.load(f)
 
         assert list(durations.keys()) == [
+            "__comment__",
             "test_it_stores.py::test_1",
             "test_it_stores.py::test_10",
             "test_it_stores.py::test_2",
@@ -46,8 +50,11 @@ class TestStoreDurations:
             "test_it_stores.py::test_9",
         ]
 
-        for duration in durations.values():
-            assert isinstance(duration, float)
+        for key, value in durations.items():
+            if key == "__comment__":
+                assert isinstance(value, str)
+            else:
+                assert isinstance(value, float)
 
     def test_it_overrides_existing_durations(self, example_suite, durations_path):
         existing_duration_test_name = "test_it_overrides_existing_durations0/test_it_overrides_existing_durations.py::test_1"
@@ -61,7 +68,7 @@ class TestStoreDurations:
             durations = json.load(f)
 
         assert durations[existing_duration_test_name] != old_value
-        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT
+        assert len(durations) == EXAMPLE_SUITE_KEY_COUNT
 
     def test_it_doesnt_remove_old_durations(self, example_suite, durations_path):
         old_durations = {"test_old1": 1, "test_old2": 2}
@@ -75,7 +82,7 @@ class TestStoreDurations:
 
         for item in old_durations:
             assert item in durations.keys()
-        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT + len(old_durations)
+        assert len(durations) == EXAMPLE_SUITE_KEY_COUNT + len(old_durations)
 
     def test_it_removes_old_when_cli_flag_used(self, example_suite, durations_path):
         old_durations = {"test_old1": 1, "test_old2": 2}
@@ -91,7 +98,7 @@ class TestStoreDurations:
 
         for item in old_durations:
             assert item not in durations.keys()
-        assert len(durations) == EXAMPLE_SUITE_TEST_COUNT
+        assert len(durations) == EXAMPLE_SUITE_KEY_COUNT
 
     def test_it_does_not_store_without_flag(self, example_suite, durations_path):
         example_suite.runpytest("--durations-path", durations_path)
