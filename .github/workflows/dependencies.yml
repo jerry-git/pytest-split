@@ -18,7 +18,7 @@ jobs:
         id: check_for_outdated_dependencies
         run: |
           body=$(poetry show -o -n)
-          echo ::set-output name="body::$body"
+          echo "body=$body" >> $GITHUB_OUTPUT
 
       - name: Format PR message
         if: ${{ steps.check_for_outdated_dependencies.outputs.body != 0 }}
@@ -35,7 +35,7 @@ jobs:
           body="${body//'%'/'%25'}"
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"
-          echo ::set-output name="body::$body"
+          echo "body=$body" >> $GITHUB_OUTPUT
 
       - name: Update outdated packages
         if: ${{ steps.check_for_outdated_dependencies.outputs.body != 0 }}
