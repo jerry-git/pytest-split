@@ -15,24 +15,9 @@ repos:
       - id: mixed-line-ending
 -   repo: local
     hooks:
-      - id: autoflake
-        name: autoflake
-        entry: poetry run autoflake -r -i --remove-all-unused-imports --remove-unused-variables
-        language: system
-        types: [ python ]
-      - id: isort
-        name: isort
-        entry: poetry run isort
-        language: system
-        types: [python]
       - id: black
         name: black
         entry: poetry run black
-        language: system
-        types: [python]
-      - id: pyupgrade
-        name: pyupgrade
-        entry: poetry run pyupgrade --py37-plus
         language: system
         types: [python]
       - id: mypy
@@ -42,9 +27,10 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-      - id: flake8
-        name: flake8
-        entry: poetry run flake8
+      - id: ruff
+        name: ruff
+        entry: poetry run ruff check
+        require_serial: true
         language: system
         types: [python]
       - id: kacl-verify

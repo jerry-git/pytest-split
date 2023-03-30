@@ -6,6 +6,7 @@ import pytest
 
 if TYPE_CHECKING:
     from typing import List, Set
+
     from _pytest.nodes import Item
 
 from pytest_split.algorithms import Algorithms
@@ -17,7 +18,7 @@ class TestAlgorithms:
     @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_test(self, algo_name):
         durations = {"a": 1, "b": 1, "c": 1}
-        items = [item(x) for x in durations.keys()]
+        items = [item(x) for x in durations]
         algo = Algorithms[algo_name].value
         first, second, third = algo(splits=3, items=items, durations=durations)
 
@@ -70,7 +71,7 @@ class TestAlgorithms:
         assert second.selected == [item(x) for x in ["a", "b", "c"]]
 
     @pytest.mark.parametrize(
-        "algo_name, expected",
+        ("algo_name", "expected"),
         [
             ("duration_based_chunks", [[item("a"), item("b")], [item("c"), item("d")]]),
             ("least_duration", [[item("a"), item("c")], [item("b"), item("d")]]),
@@ -94,7 +95,7 @@ class TestAlgorithms:
         assert second.selected == expected_second
 
     @pytest.mark.parametrize(
-        "algo_name, expected",
+        ("algo_name", "expected"),
         [
             (
                 "duration_based_chunks",

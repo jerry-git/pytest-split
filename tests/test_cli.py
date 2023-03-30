@@ -5,11 +5,10 @@ from io import StringIO
 from unittest.mock import patch
 
 import pytest
-
 from pytest_split import cli
 
 
-@pytest.fixture
+@pytest.fixture()
 def durations_file(tmpdir):
     durations_path = str(tmpdir.join(".durations"))
     durations = {f"test_{i}": float(i) for i in range(1, 11)}
@@ -28,5 +27,5 @@ def test_slowest_tests(durations_file):
         )
         cli.list_slowest_tests()
 
-        output = sys.stdout.getvalue()  # type: ignore
-        assert output == "10.00 test_10\n" "9.00 test_9\n" "8.00 test_8\n"
+        output = sys.stdout.getvalue()  # type: ignore[attr-defined]
+        assert output == ("10.00 test_10\n9.00 test_9\n8.00 test_8\n")

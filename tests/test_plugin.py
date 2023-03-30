@@ -10,7 +10,7 @@ pytest_plugins = ["pytester"]
 EXAMPLE_SUITE_TEST_COUNT = 10
 
 
-@pytest.fixture
+@pytest.fixture()
 def example_suite(testdir):
     testdir.makepyfile(
         "".join(
@@ -18,10 +18,10 @@ def example_suite(testdir):
             for num in range(1, EXAMPLE_SUITE_TEST_COUNT + 1)
         )
     )
-    yield testdir
+    return testdir
 
 
-@pytest.fixture
+@pytest.fixture()
 def durations_path(tmpdir):
     return str(tmpdir.join(".durations"))
 
@@ -74,7 +74,7 @@ class TestStoreDurations:
             durations = json.load(f)
 
         for item in old_durations:
-            assert item in durations.keys()
+            assert item in durations
         assert len(durations) == EXAMPLE_SUITE_TEST_COUNT + len(old_durations)
 
     def test_it_removes_old_when_cli_flag_used(self, example_suite, durations_path):
@@ -171,9 +171,10 @@ class TestSplitToSuites:
     enumerated_params = [(i, *param) for i, param in enumerate(all_params)]
 
     @pytest.mark.parametrize(
-        "test_idx, splits, group, algo, expected, legacy_flag", enumerated_params
+        ("test_idx", "splits", "group", "algo", "expected", "legacy_flag"),
+        enumerated_params,
     )
-    def test_it_splits(
+    def test_it_splits(  # noqa: PLR0913
         self,
         test_idx,
         splits,
@@ -196,7 +197,7 @@ class TestSplitToSuites:
         }
         if legacy_flag:
             # formats durations to legacy format
-            durations = [list(tup) for tup in durations.items()]  # type: ignore
+            durations = [list(tup) for tup in durations.items()]  # type: ignore[assignment]
 
         with open(durations_path, "w") as f:
             json.dump(durations, f)
@@ -298,7 +299,7 @@ class TestSplitToSuites:
                 group,
                 "--durations-path",
                 durations_path,
-                "-m" "mark_one",
+                "-m mark_one",
             )
             for group in range(1, 3)
         ]
