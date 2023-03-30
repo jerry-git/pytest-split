@@ -33,4 +33,4 @@ def _list_slowest_tests(durations: "Dict[str, float]", count: int) -> None:
         sorted(durations.items(), key=lambda item: item[1], reverse=True)
     )[:count]
     for test, duration in slowest_tests:
-        print(f"{duration:.2f} {test}")  # noqa: T001
+        print(f"{duration:.2f} {test}")  # noqa: T201

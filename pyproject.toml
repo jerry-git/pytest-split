@@ -37,29 +37,18 @@ pytest = "^5 | ^6 | ^7"
 
 
 [tool.poetry.dev-dependencies]
-autoflake = "*"
 black = "*"
-flake8 = "*"
-flake8-bugbear = "*"
-flake8-builtins = "*"
-flake8-comprehensions = "*"
-flake8-debugger = "*"
-flake8-eradicate = "*"
-flake8-logging-format = "*"
-flake8-type-checking = "*"
 importlib-metadata = "==4.11.*"
-isort = "*"
 mkdocstrings = "*"
 mkdocs-material = "*"
 mypy = "*"
-pep8-naming = "*"
 pre-commit = "*"
 pymdown-extensions = "*"
 pytest = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-cov = "*"
 python-kacl = "*"
-pyupgrade = "*"
+ruff = "*"
 tryceratops = "*"
 
 [build-system]
@@ -71,10 +60,6 @@ slowest-tests = "pytest_split.cli:list_slowest_tests"
 
 [tool.poetry.plugins.pytest11]
 pytest-split = "pytest_split.plugin"
-
-[tool.isort]
-profile = "black"
-src_paths = ["src", "tests"]
 
 [tool.black]
 target-version = ["py37", "py38", "py39"]
@@ -110,3 +95,20 @@ show_error_codes = true
 module = ['tests.*']
 disallow_untyped_defs = false
 strict_equality = false
+
+[tool.ruff]
+select = ["A", "B", "C", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+ignore = [
+    "ANN",      # Type hints related, let mypy handle these.
+    "COM812",   # "Trailing comma missing". If black is happy, I'm happy.
+    "E501",     # "Line too long". If black is happy, I'm happy.
+    "EM101",    # "Exception must not use a string literal, assign to variable first"
+    "EM102",    # "Exception must not use an f-string literal, assign to variable first"
+    "PTH",      # User Pathlib stuff over os.*. Should migrate to Pathlib at some point.
+    "RET504",   # "Unnecessary variable assignment before `return` statement"
+    "S101",     # "Use of `assert` detected"
+    "SIM108",   # "Use ternary operator ...". Ternary is harmful for readability in some cases.
+    "TRY003",   # "Avoid specifying long messages outside the exception class"
+    ]
+line-length = 88
+target-version = "py37"

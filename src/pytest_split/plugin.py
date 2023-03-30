@@ -201,7 +201,6 @@ class PytestSplitCachePlugin(Base):
         for test_reports in terminal_reporter.stats.values():
             for test_report in test_reports:
                 if isinstance(test_report, TestReport):
-
                     # These ifs be removed after this is solved: # https://github.com/spulec/freezegun/issues/286
                     if test_report.duration < 0:
                         continue  # pragma: no cover

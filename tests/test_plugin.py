@@ -173,7 +173,7 @@ class TestSplitToSuites:
     @pytest.mark.parametrize(
         "test_idx, splits, group, algo, expected, legacy_flag", enumerated_params
     )
-    def test_it_splits(
+    def test_it_splits(  # noqa: PLR0913
         self,
         test_idx,
         splits,
@@ -196,7 +196,7 @@ class TestSplitToSuites:
         }
         if legacy_flag:
             # formats durations to legacy format
-            durations = [list(tup) for tup in durations.items()]  # type: ignore
+            durations = [list(tup) for tup in durations.items()]  # type: ignore[assignment]
 
         with open(durations_path, "w") as f:
             json.dump(durations, f)
@@ -298,7 +298,7 @@ class TestSplitToSuites:
                 group,
                 "--durations-path",
                 durations_path,
-                "-m" "mark_one",
+                "-m mark_one",
             )
             for group in range(1, 3)
         ]
