@@ -28,6 +28,4 @@ def test_slowest_tests(durations_file):
         cli.list_slowest_tests()
 
         output = sys.stdout.getvalue()  # type: ignore[attr-defined]
-        assert output == ("10.00 test_10\n"
-                          "9.00 test_9\n"
-                          "8.00 test_8\n")
+        assert output == ("10.00 test_10\n9.00 test_9\n8.00 test_8\n")

@@ -171,7 +171,8 @@ class TestSplitToSuites:
     enumerated_params = [(i, *param) for i, param in enumerate(all_params)]
 
     @pytest.mark.parametrize(
-        ("test_idx", "splits", "group", "algo", "expected", "legacy_flag"), enumerated_params
+        ("test_idx", "splits", "group", "algo", "expected", "legacy_flag"),
+        enumerated_params,
     )
     def test_it_splits(  # noqa: PLR0913
         self,
