@@ -5,11 +5,10 @@ from io import StringIO
 from unittest.mock import patch
 
 import pytest
-
 from pytest_split import cli
 
 
-@pytest.fixture
+@pytest.fixture()
 def durations_file(tmpdir):
     durations_path = str(tmpdir.join(".durations"))
     durations = {f"test_{i}": float(i) for i in range(1, 11)}

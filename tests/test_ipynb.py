@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 import pytest
-
 from pytest_split.algorithms import Algorithms
 from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
@@ -28,7 +27,7 @@ class TestIPyNb:
             "temp/nbs/test_4.ipynb::Cell 1": 1,
             "temp/nbs/test_4.ipynb::Cell 2": 3,
         }
-        items = [item(x) for x in durations.keys()]
+        items = [item(x) for x in durations]
         algo = Algorithms[algo_name].value
         groups = algo(splits=3, items=items, durations=durations)
 

@@ -76,7 +76,7 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
-@pytest.mark.tryfirst
+@pytest.mark.tryfirst()
 def pytest_cmdline_main(config: "Config") -> "Optional[Union[int, ExitCode]]":
     """
     Validate options.
@@ -135,9 +135,7 @@ class Base:
         # from saving durations in a list-of-lists to a dict format
         # Remove this when bumping to v1
         if isinstance(self.cached_durations, list):
-            self.cached_durations = {
-                test_name: duration for test_name, duration in self.cached_durations
-            }
+            self.cached_durations = dict(self.cached_durations)
 
 
 class PytestSplitPlugin(Base):
@@ -182,7 +180,6 @@ class PytestSplitPlugin(Base):
                 f"[pytest-split] Running group {group_idx}/{splits} (estimated duration: {group.duration:.2f}s)\n"
             )
         )
-        return None
 
 
 class PytestSplitCachePlugin(Base):
