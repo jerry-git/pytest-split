@@ -97,10 +97,11 @@ disallow_untyped_defs = false
 strict_equality = false
 
 [tool.ruff]
-select = ["A", "B", "C", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+select = ["ALL"]
 ignore = [
     "ANN",      # Type hints related, let mypy handle these.
     "COM812",   # "Trailing comma missing". If black is happy, I'm happy.
+    "D",        # Docstrings related
     "E501",     # "Line too long". If black is happy, I'm happy.
     "EM101",    # "Exception must not use a string literal, assign to variable first"
     "EM102",    # "Exception must not use an f-string literal, assign to variable first"
