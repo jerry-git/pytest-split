@@ -76,7 +76,7 @@ def pytest_addoption(parser: "Parser") -> None:
     )
 
 
-@pytest.mark.tryfirst()
+@pytest.hookimpl(tryfirst=True)
 def pytest_cmdline_main(config: "Config") -> "Optional[Union[int, ExitCode]]":
     """
     Validate options.
