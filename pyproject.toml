@@ -40,7 +40,7 @@ pytest = "^5 | ^6 | ^7"
 [tool.poetry.dev-dependencies]
 black = "*"
 importlib-metadata = "==4.11.*"
-mkdocstrings = "*"
+mkdocstrings = {version = ">=0.18", extras = ["python"]}
 mkdocs-material = "*"
 mypy = "*"
 pre-commit = "*"

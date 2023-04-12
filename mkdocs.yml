@@ -1,4 +1,4 @@
-site_name: pytest-split
+site_name: "pytest-split"
 repo_url: https://github.com/jerry-git/pytest-split
 
 theme:
@@ -31,5 +31,6 @@ plugins:
           rendering:
             show_signature_annotations: true
             show_source: true
+            show_submodules: true
       watch:
         - src/pytest_split
