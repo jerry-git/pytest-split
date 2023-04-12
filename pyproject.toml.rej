@@ -1,0 +1,10 @@
+diff a/pyproject.toml b/pyproject.toml	(rejected hunks)
+@@ -43,7 +43,7 @@ flake8-debugger = "*"
+ flake8-eradicate = "*"
+ flake8-logging-format = "*"
+ isort = "*"
+-mkdocstrings = "*"
++mkdocstrings = {version = ">=0.18", extras = ["python"]}
+ mkdocs-material = "*"
+ mypy = "*"
+ pep8-naming = "*"
