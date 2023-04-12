@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.1] - 2023-04-12
 ### Changed
 - Introduce Ruff
 - Fixed usage of [deprecated pytest API](https://docs.pytest.org/en/latest/deprecations.html#configuring-hook-specs-impls-using-markers)
@@ -35,9 +37,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Durations file content in prettier format, see https://github.com/jerry-git/pytest-split/pull/31
 
-[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.8.0...master
+[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.8.1...master
+[0.8.1]: https://github.com/jerry-git/pytest-split/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/jerry-git/pytest-split/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/jerry-git/pytest-split/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/jerry-git/pytest-split/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/jerry-git/pytest-split/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/jerry-git/pytest-split/tree/0.4.0
+
