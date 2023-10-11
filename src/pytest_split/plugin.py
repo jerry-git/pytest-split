@@ -33,8 +33,11 @@ def pytest_addoption(parser: "Parser") -> None:
     group.addoption(
         "--store-durations",
         dest="store_durations",
-        action="store_true",
         help="Store durations into '--durations-path'.",
+        type=str,
+        choices=["keep", "replace"],
+        const="replace",
+        nargs="?",
     )
     group.addoption(
         "--durations-path",
@@ -187,7 +190,7 @@ class PytestSplitCachePlugin(Base):
     The cache plugin writes durations to our durations file.
     """
 
-    def pytest_sessionfinish(self) -> None:
+    def pytest_sessionfinish(self) -> None:  # noqa: C901
         """
         Method is called by Pytest after the test-suite has run.
         https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L308
@@ -216,6 +219,10 @@ class PytestSplitCachePlugin(Base):
 
         if self.config.option.clean_durations:
             self.cached_durations = dict(test_durations)
+        elif self.config.option.store_durations == "keep":
+            for k, v in test_durations.items():
+                if k not in self.cached_durations:
+                    self.cached_durations[k] = v
         else:
             for k, v in test_durations.items():
                 self.cached_durations[k] = v

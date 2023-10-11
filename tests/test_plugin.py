@@ -27,27 +27,65 @@ def durations_path(tmpdir):
 
 
 class TestStoreDurations:
-    def test_it_stores(self, example_suite, durations_path):
+    def test_it_stores_replace(self, example_suite, durations_path):
         example_suite.runpytest("--store-durations", "--durations-path", durations_path)
 
         with open(durations_path) as f:
             durations = json.load(f)
 
         assert list(durations.keys()) == [
-            "test_it_stores.py::test_1",
-            "test_it_stores.py::test_10",
-            "test_it_stores.py::test_2",
-            "test_it_stores.py::test_3",
-            "test_it_stores.py::test_4",
-            "test_it_stores.py::test_5",
-            "test_it_stores.py::test_6",
-            "test_it_stores.py::test_7",
-            "test_it_stores.py::test_8",
-            "test_it_stores.py::test_9",
+            "test_it_stores_replace.py::test_1",
+            "test_it_stores_replace.py::test_10",
+            "test_it_stores_replace.py::test_2",
+            "test_it_stores_replace.py::test_3",
+            "test_it_stores_replace.py::test_4",
+            "test_it_stores_replace.py::test_5",
+            "test_it_stores_replace.py::test_6",
+            "test_it_stores_replace.py::test_7",
+            "test_it_stores_replace.py::test_8",
+            "test_it_stores_replace.py::test_9",
         ]
 
         for duration in durations.values():
             assert isinstance(duration, float)
+
+    def test_it_stores_keep(self, example_suite, durations_path):
+        example_suite.runpytest("--store-durations", "--durations-path", durations_path)
+
+        with open(durations_path) as f:
+            durations = json.load(f)
+
+        default_keys = [
+            "test_it_stores_keep.py::test_1",
+            "test_it_stores_keep.py::test_10",
+            "test_it_stores_keep.py::test_2",
+            "test_it_stores_keep.py::test_3",
+            "test_it_stores_keep.py::test_4",
+            "test_it_stores_keep.py::test_5",
+            "test_it_stores_keep.py::test_6",
+            "test_it_stores_keep.py::test_7",
+            "test_it_stores_keep.py::test_8",
+            "test_it_stores_keep.py::test_9",
+        ]
+
+        assert list(durations.keys()) == default_keys
+
+        for duration in durations.values():
+            assert isinstance(duration, float)
+
+        example_suite.makepyfile("def test_11(): pass")
+        example_suite.runpytest(
+            "--store-durations", "keep", "--durations-path", durations_path
+        )
+
+        with open(durations_path) as f:
+            durations_keep = json.load(f)
+        assert list(durations_keep.keys()) == [
+            *default_keys,
+            "test_it_stores_keep0/test_it_stores_keep.py::test_11",
+        ]
+        for k in default_keys:
+            assert durations_keep[k] == durations[k]
 
     def test_it_overrides_existing_durations(self, example_suite, durations_path):
         existing_duration_test_name = "test_it_overrides_existing_durations0/test_it_overrides_existing_durations.py::test_1"
