@@ -1,6 +1,7 @@
 import itertools
 import json
 import os
+from typing import ClassVar
 
 import pytest
 from _pytest.main import ExitCode
@@ -90,7 +91,7 @@ class TestStoreDurations:
             durations = json.load(f)
 
         for item in old_durations:
-            assert item not in durations.keys()
+            assert item not in durations
         assert len(durations) == EXAMPLE_SUITE_TEST_COUNT
 
     def test_it_does_not_store_without_flag(self, example_suite, durations_path):
@@ -99,7 +100,7 @@ class TestStoreDurations:
 
 
 class TestSplitToSuites:
-    parameters = [
+    parameters: ClassVar = [
         (
             1,
             1,
@@ -163,12 +164,12 @@ class TestSplitToSuites:
         (4, 3, "least_duration", ["test_2", "test_5", "test_7"]),
         (4, 4, "least_duration", ["test_3", "test_8"]),
     ]
-    legacy_duration = [True, False]
-    all_params = [
+    legacy_duration: ClassVar = [True, False]
+    all_params: ClassVar = [
         (*param, legacy_flag)
         for param, legacy_flag in itertools.product(parameters, legacy_duration)
     ]
-    enumerated_params = [(i, *param) for i, param in enumerate(all_params)]
+    enumerated_params: ClassVar = [(i, *param) for i, param in enumerate(all_params)]
 
     @pytest.mark.parametrize(
         ("test_idx", "splits", "group", "algo", "expected", "legacy_flag"),

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from pytest_split.algorithms import Algorithms
 
-item = namedtuple("item", "nodeid")
+item = namedtuple("item", "nodeid")  # noqa: PYI024
 
 
 class TestAlgorithms:
