@@ -110,6 +110,7 @@ ignore = [
     "S101",     # "Use of `assert` detected"
     "SIM108",   # "Use ternary operator ...". Ternary is harmful for readability in some cases.
     "TRY003",   # "Avoid specifying long messages outside the exception class"
+    "FA100", 	# "Missing `from __future__ import annotations` ..." pytest-split supports a range of Python versions
     ]
 line-length = 88
 target-version = "py37"
