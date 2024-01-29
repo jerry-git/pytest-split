@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 ### Added
-- Support for pytest 8.x, see
+- Support for pytest 8.x
+- Python 3.12 to CI test matrix
 
 ## [0.8.1] - 2023-04-12
 ### Changed
