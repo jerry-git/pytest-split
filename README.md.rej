@@ -1,0 +1,10 @@
+diff a/README.md b/README.md	(rejected hunks)
+@@ -66,7 +65,7 @@ Find the draft release from the
+ 
+ ### Pre-commit
+ 
+-Pre-commit hooks run all the auto-formatters (e.g. `black`, `isort`), linters (e.g. `mypy`, `flake8`), and other quality
++Pre-commit hooks run all the auto-formatting (`ruff format`), linters (e.g. `ruff` and `mypy`), and other quality
+  checks to make sure the changeset is in good shape before a commit/push happens.
+ 
+ You can install the hooks with (runs for each commit):

@@ -28,9 +28,7 @@ plugins:
       default_handler: python
       handlers:
         python:
-          rendering:
+          options:
             show_signature_annotations: true
             show_source: true
             show_submodules: true
-      watch:
-        - src/pytest_split

@@ -1,0 +1,124 @@
+diff a/pyproject.toml b/pyproject.toml	(rejected hunks)
+@@ -18,9 +18,11 @@ classifiers = [
+   "Operating System :: OS Independent",
+   "Programming Language :: Python",
+   "Programming Language :: Python :: 3",
+-  "Programming Language :: Python :: 3.7",
+   "Programming Language :: Python :: 3.8",
+   "Programming Language :: Python :: 3.9",
++  "Programming Language :: Python :: 3.10",
++  "Programming Language :: Python :: 3.11",
++  "Programming Language :: Python :: 3.12",
+   "Topic :: Software Development :: Libraries :: Python Modules",
+   "Typing :: Typed",
+ ]
+@@ -30,43 +32,54 @@ packages = [
+ ]
+ 
+ [tool.poetry.dependencies]
+-python = ">=3.7.1, <4.0"
+-
+-[tool.poetry.dev-dependencies]
+-autoflake = "*"
+-black = "*"
+-flake8 = "*"
+-flake8-bugbear = "*"
+-flake8-builtins = "*"
+-flake8-comprehensions = "*"
+-flake8-debugger = "*"
+-flake8-eradicate = "*"
+-flake8-logging-format = "*"
+-isort = "*"
+-mkdocstrings = {version = ">=0.18", extras = ["python"]}
++python = ">=3.8.1, <4.0"
++
++[tool.poetry.group.dev.dependencies]
++mkdocstrings = {version = ">=0.23", extras = ["python"]}
+ mkdocs-material = "*"
+ mypy = "*"
+-pep8-naming = "*"
+ pre-commit = "*"
+ pymdown-extensions = "*"
+ pytest = "*"
+ pytest-github-actions-annotate-failures = "*"
+ pytest-cov = "*"
+ python-kacl = "*"
+-pyupgrade = "*"
+-tryceratops = "*"
++ruff = ">=0.2.0"
+ 
+ [build-system]
+ requires = ["poetry-core>=1.0.0"]
+ build-backend = "poetry.core.masonry.api"
+ 
+-[tool.isort]
+-profile = "black"
+-src_paths = ["src", "tests"]
++[tool.ruff]
++target-version = "py38" # The lowest supported version
++
++[tool.ruff.lint]
++# By default, enable all the lint rules.
++# Add to the ignore list below if you don't want some rules.
++# If you need some ignores for certain modules, see tool.ruff.lint.per-file-ignores below.
++# For individual ignore cases, prefer inline `# noqa`s within the code.
++select = ["ALL"]
++ignore = [
++    "ANN",      # Type hints related, let mypy handle these.
++    "D",        # Docstrings related, way too strict to our taste
++    ]
++
++[tool.ruff.lint.per-file-ignores]
++"tests/**" = [
++    "S101",     # "Use of `assert` detected"
++    "ARG",      # "Unused function argument". Fixtures are often unused.
++    "S105",     # "Possible hardcoded password".
++]
++
++[tool.ruff.lint.mccabe]
++max-complexity = 10
+ 
+-[tool.black]
+-target-version = ["py37", "py38", "py39"]
+-include = '\.pyi?$'
++[tool.ruff.lint.pep8-naming]
++classmethod-decorators = [
++    "classmethod",
++    "pydantic.validator",
++    "pydantic.root_validator",
++]
+ 
+ [tool.pytest.ini_options]
+ addopts = """\
+@@ -84,12 +97,23 @@ exclude_lines = [
+ ]
+ 
+ [tool.mypy]
++# This is the global mypy configuration.
++# Avoid changing this!
++strict = true  # See all the enabled flags `mypy --help | grep -A 10 'Strict mode'`
+ disallow_any_unimported = true
+-disallow_untyped_defs = true
+-no_implicit_optional = true
+-strict_equality = true
+-warn_unused_ignores = true
+-warn_redundant_casts = true
+-warn_return_any = true
+-check_untyped_defs = true
+-show_error_codes = true
++
++# If you need to ignore something for some specific module,
++# add overrides for them. Avoid changing the global config!
++# For example:
++# [[tool.mypy.overrides]]
++# module = [
++#  "my_unpyted_dependency1.*",
++#  "my_unpyted_dependency2.*"
++# ]
++# ignore_missing_imports = true
++
++# [[tool.mypy.overrides]]
++# module = [
++#   "tests/my_thing/test_my_thing",
++# ]
++# disallow_untyped_defs = false
