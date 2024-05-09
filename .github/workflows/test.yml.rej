@@ -1,0 +1,21 @@
+diff a/.github/workflows/test.yml b/.github/workflows/test.yml	(rejected hunks)
+@@ -38,10 +38,17 @@ jobs:
+     strategy:
+       fail-fast: false
+       matrix:
+-        python-version: ["3.7", "3.8", "3.9", "3.10"]
++        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+     steps:
+-      - uses: actions/checkout@v2
++      - uses: actions/checkout@v4
+       - uses: ./.github/actions/python-poetry-env
+         with:
+           python-version: ${{ matrix.python-version }}
+       - run: poetry run pytest
++
++  docs:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: ./.github/actions/python-poetry-env
++      - run: poetry run mkdocs build
