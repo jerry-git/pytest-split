@@ -1,6 +1,7 @@
 import argparse
 import glob
 import json
+import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -58,16 +59,33 @@ def run_combine_tests() -> None:
         type=str,
     )
     parser.add_argument(
-        '--keep_original',
-        action='store_true',
-        default=False
+        "--root-folder",
+        help=(
+            "Path to the folder where to run the command"
+            "default is . to run in the current working directory"
+        ),
+        default=".",
+        type=str,
     )
+    parser.add_argument("--keep_original", action="store_true", default=False)
 
     args = parser.parse_args()
-    return _run_combine_tests(args.durations_path, args.durations_pattern,args.keep_original)
+
+    return _run_combine_tests(
+        args.durations_path,
+        args.durations_pattern,
+        args.root_folder,
+        keep_original=args.keep_original,
+    )
 
 
-def _run_combine_tests(durations_path: str, durations_pattern: str, keep_original: bool) -> None:
+def _run_combine_tests(
+    durations_path: str,
+    durations_pattern: str,
+    root_folder: str,
+    *,
+    keep_original: bool,
+) -> None:
     """
     Combines JSON files matching a pattern into a single object and writes it to an output file.
 
@@ -77,25 +95,32 @@ def _run_combine_tests(durations_path: str, durations_pattern: str, keep_origina
 
     """
     combined_data = {}
-    filenames = glob.glob(durations_pattern)
+    filenames = glob.glob(durations_pattern, root_dir=root_folder)
+
     if not filenames:
-        print(f"No file found with pattern {durations_pattern}")
+        print(  # noqa: T201
+            f"No file found with pattern {durations_pattern} in {root_folder}"
+        )
         return
 
-    for filename in filenames:
-        try:
-            with open(filename, 'r') as f:
+    try:
+        for filename in filenames:
+            fullpath_filename = os.path.join(root_folder, filename)
+            with open(fullpath_filename) as f:
                 data = json.load(f)
             combined_data.update(data)  # Efficiently merge dictionaries
-        except (IOError, json.JSONDecodeError) as e:
-            print(f"Error processing file '{filename}': {e}")
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"Error processing file '{filename}': {e}")  # noqa: T201
+        return
 
     if keep_original:
-        with open(durations_path, 'r') as f:
+        with open(durations_path) as f:
             data = json.load(f)
         combined_data.update(data)
 
-    print(f"{len(filenames)} files combined, with a total of {len(combined_data)} entries")
+    print(  # noqa: T201
+        f"{len(filenames)} files combined, with a total of {len(combined_data)} entries"
+    )
 
-    with open(durations_path, 'w') as f:
+    with open(durations_path, "w") as f:
         json.dump(combined_data, f, indent=4)  # Write with indentation
