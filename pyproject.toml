@@ -29,7 +29,6 @@ classifiers = [
 
 keywords = ['pytest', 'plugin', 'split', 'tests']
 packages = [{ include = 'pytest_split', from = 'src' }]
-include = ['LICENCE']
 
 
 [tool.poetry.dependencies]
