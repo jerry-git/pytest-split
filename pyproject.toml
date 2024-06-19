@@ -18,27 +18,25 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
 
 keywords = ['pytest', 'plugin', 'split', 'tests']
 packages = [{ include = 'pytest_split', from = 'src' }]
-include = ['LICENCE']
 
 
 [tool.poetry.dependencies]
-python = ">=3.7.1, <4.0"
+python = ">=3.8.1, <4.0"
 pytest = "^5 | ^6 | ^7 | ^8"
 
 
 [tool.poetry.dev-dependencies]
-black = "*"
 importlib-metadata = "==4.11.*"
 mkdocstrings = {version = ">=0.18", extras = ["python"]}
 mkdocs-material = "*"
@@ -49,7 +47,7 @@ pytest = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-cov = "*"
 python-kacl = "*"
-ruff = "*"
+ruff = ">=0.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -81,22 +79,26 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+# This is the global mypy configuration.
+# Avoid changing this!
+strict = true  # See all the enabled flags `mypy --help | grep -A 10 'Strict mode'`
 disallow_any_unimported = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-strict_equality = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_return_any = true
-check_untyped_defs = true
-show_error_codes = true
 
 [[tool.mypy.overrides]]
 module = ['tests.*']
 disallow_untyped_defs = false
 strict_equality = false
+disallow_untyped_calls = false
+
 
 [tool.ruff]
+target-version = "py38" # The lowest supported version
+
+[tool.ruff.lint]
+# By default, enable all the lint rules.
+# Add to the ignore list below if you don't want some rules.
+# If you need some ignores for certain modules, see tool.ruff.lint.per-file-ignores below.
+# For individual ignore cases, prefer inline `# noqa`s within the code.
 select = ["ALL"]
 ignore = [
     "ANN",      # Type hints related, let mypy handle these.
@@ -112,5 +114,20 @@ ignore = [
     "TRY003",   # "Avoid specifying long messages outside the exception class"
     "FA100", 	# "Missing `from __future__ import annotations` ..." pytest-split supports a range of Python versions
     ]
-line-length = 88
-target-version = "py37"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",     # "Use of `assert` detected"
+    "ARG",      # "Unused function argument". Fixtures are often unused.
+    "S105",     # "Possible hardcoded password".
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "classmethod",
+    "pydantic.validator",
+    "pydantic.root_validator",
+]

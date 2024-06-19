@@ -51,12 +51,12 @@ def least_duration(
         items_with_durations_indexed, key=lambda tup: tup[1], reverse=True
     )
 
-    selected: "List[List[Tuple[nodes.Item, int]]]" = [[] for _ in range(splits)]
-    deselected: "List[List[nodes.Item]]" = [[] for _ in range(splits)]
-    duration: "List[float]" = [0 for _ in range(splits)]
+    selected: List[List[Tuple[nodes.Item, int]]] = [[] for _ in range(splits)]
+    deselected: List[List[nodes.Item]] = [[] for _ in range(splits)]
+    duration: List[float] = [0 for _ in range(splits)]
 
     # create a heap of the form (summed_durations, group_index)
-    heap: "List[Tuple[float, int]]" = [(0, i) for i in range(splits)]
+    heap: List[Tuple[float, int]] = [(0, i) for i in range(splits)]
     heapq.heapify(heap)
     for item, item_duration, original_index in sorted_items_with_durations:
         # get group with smallest sum
@@ -102,9 +102,9 @@ def duration_based_chunks(
     items_with_durations = _get_items_with_durations(items, durations)
     time_per_group = sum(map(itemgetter(1), items_with_durations)) / splits
 
-    selected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
-    deselected: "List[List[nodes.Item]]" = [[] for i in range(splits)]
-    duration: "List[float]" = [0 for i in range(splits)]
+    selected: List[List[nodes.Item]] = [[] for i in range(splits)]
+    deselected: List[List[nodes.Item]] = [[] for i in range(splits)]
+    duration: List[float] = [0 for i in range(splits)]
 
     group_idx = 0
     for item, item_duration in items_with_durations:
