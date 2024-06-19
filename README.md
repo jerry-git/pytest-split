@@ -57,6 +57,9 @@ The splitting algorithm can be controlled with the `--splitting-algorithm` CLI o
 #### slowest-tests
 Lists the slowest tests based on the information stored in the test durations file. See `slowest-tests --help` for more
  information.
+#### combine-tests
+Combine a group of test durations files into a single durations file. See `combine-tests --help` for more
+ information.
 
 ## Interactions with other pytest plugins
 * [`pytest-random-order`](https://github.com/jbasko/pytest-random-order) and [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly):
