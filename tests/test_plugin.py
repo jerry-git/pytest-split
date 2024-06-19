@@ -4,7 +4,7 @@ import os
 from typing import ClassVar
 
 import pytest
-from _pytest.main import ExitCode
+from _pytest.main import ExitCode  # type: ignore[attr-defined]
 
 pytest_plugins = ["pytester"]
 

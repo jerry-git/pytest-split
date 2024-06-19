@@ -125,7 +125,7 @@ class TestAlgorithms:
         items = [item(t) for t in tests]
         algo = Algorithms["least_duration"].value
         for n in (2, 3, 4):
-            selected_each: "List[Set[Item]]" = [set() for _ in range(n)]
+            selected_each: List[Set[Item]] = [set() for _ in range(n)]
             for order in itertools.permutations(items):
                 splits = algo(splits=n, items=order, durations=durations)
                 for i, group in enumerate(splits):

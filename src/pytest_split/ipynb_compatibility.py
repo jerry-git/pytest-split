@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pytest_split.algorithms import TestGroup
 
 
-def ensure_ipynb_compatibility(group: "TestGroup", items: list) -> None:
+def ensure_ipynb_compatibility(group: "TestGroup", items: list) -> None:  # type: ignore[type-arg]
     """
     Ensures that group doesn't contain partial IPy notebook cells.
 

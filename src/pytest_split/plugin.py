@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from _pytest import nodes
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
-    from _pytest.main import ExitCode
+    from _pytest.main import ExitCode  # type: ignore[attr-defined]
 
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
@@ -193,9 +193,9 @@ class PytestSplitCachePlugin(Base):
         https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L308
         """
         terminal_reporter = self.config.pluginmanager.get_plugin("terminalreporter")
-        test_durations: "Dict[str, float]" = {}
+        test_durations: Dict[str, float] = {}
 
-        for test_reports in terminal_reporter.stats.values():
+        for test_reports in terminal_reporter.stats.values():  # type: ignore[union-attr]
             for test_report in test_reports:
                 if isinstance(test_report, TestReport):
                     # These ifs be removed after this is solved: # https://github.com/spulec/freezegun/issues/286
@@ -224,8 +224,6 @@ class PytestSplitCachePlugin(Base):
             json.dump(self.cached_durations, f, sort_keys=True, indent=4)
 
         message = self.writer.markup(
-            "\n\n[pytest-split] Stored test durations in {}".format(
-                self.config.option.durations_path
-            )
+            f"\n\n[pytest-split] Stored test durations in {self.config.option.durations_path}"
         )
         self.writer.line(message)
