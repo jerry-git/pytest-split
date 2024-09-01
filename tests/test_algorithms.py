@@ -9,7 +9,10 @@ if TYPE_CHECKING:
 
     from _pytest.nodes import Item
 
-from pytest_split.algorithms import Algorithms
+from pytest_split.algorithms import (
+    AlgorithmBase,
+    Algorithms,
+)
 
 item = namedtuple("item", "nodeid")  # noqa: PYI024
 
@@ -132,3 +135,52 @@ class TestAlgorithms:
                     if not selected_each[i]:
                         selected_each[i] = set(group.selected)
                     assert selected_each[i] == set(group.selected)
+
+    def test__algorithms_members_derived_correctly(self):
+        for a in Algorithms.names():
+            assert issubclass(Algorithms[a].value.__class__, AlgorithmBase)
+
+
+class MyAlgorithm(AlgorithmBase):
+    def __call__(self, a, b, c):
+        """no-op"""
+
+
+class MyOtherAlgorithm(AlgorithmBase):
+    def __call__(self, a, b, c):
+        """no-op"""
+
+
+class TestAbstractAlgorithm:
+    def test__hash__returns_correct_result(self):
+        algo = MyAlgorithm()
+        assert algo.__hash__() == hash(algo.__class__.__name__)
+
+    def test__hash__returns_same_hash_for_same_class_instances(self):
+        algo1 = MyAlgorithm()
+        algo2 = MyAlgorithm()
+        assert algo1.__hash__() == algo2.__hash__()
+
+    def test__hash__returns_different_hash_for_different_classes(self):
+        algo1 = MyAlgorithm()
+        algo2 = MyOtherAlgorithm()
+        assert algo1.__hash__() != algo2.__hash__()
+
+    def test__eq__returns_true_for_same_instance(self):
+        algo = MyAlgorithm()
+        assert algo.__eq__(algo) is True
+
+    def test__eq__returns_false_for_different_instance(self):
+        algo1 = MyAlgorithm()
+        algo2 = MyOtherAlgorithm()
+        assert algo1.__eq__(algo2) is False
+
+    def test__eq__returns_true_for_same_algorithm_different_instance(self):
+        algo1 = MyAlgorithm()
+        algo2 = MyAlgorithm()
+        assert algo1.__eq__(algo2) is True
+
+    def test__eq__returns_false_for_non_algorithm_object(self):
+        algo = MyAlgorithm()
+        other = "not an algorithm"
+        assert algo.__eq__(other) is NotImplemented
