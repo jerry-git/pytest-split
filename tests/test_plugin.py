@@ -5,6 +5,7 @@ from typing import ClassVar
 
 import pytest
 from _pytest.main import ExitCode  # type: ignore[attr-defined]
+from pytest_split.algorithms import Algorithms
 
 pytest_plugins = ["pytester"]
 
@@ -353,10 +354,11 @@ class TestRaisesUsageErrors:
         assert result.ret == ExitCode.USAGE_ERROR
 
         outerr = capsys.readouterr()
-        assert (
-            "argument --splitting-algorithm: invalid choice: 'NON_EXISTENT' "
-            "(choose from 'duration_based_chunks', 'least_duration')"
-        ) in outerr.err
+        for err_content in [
+            "argument --splitting-algorithm: invalid choice: 'NON_EXISTENT' ",
+            *Algorithms.names(),
+        ]:
+            assert err_content in outerr.err
 
 
 class TestHasExpectedOutput:
