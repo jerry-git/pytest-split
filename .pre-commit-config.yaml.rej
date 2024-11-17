@@ -1,0 +1,9 @@
+diff a/.pre-commit-config.yaml b/.pre-commit-config.yaml	(rejected hunks)
+@@ -11,6 +11,7 @@ repos:
+       - id: check-yaml
+       - id: debug-statements
+       - id: end-of-file-fixer
++        exclude: 'CHANGELOG.md'
+       - id: trailing-whitespace
+       - id: mixed-line-ending
+ -   repo: local
