@@ -63,7 +63,7 @@ class LeastDurationAlgorithm(AlgorithmBase):
 
         # Sort by name to ensure it's always the same order
         items_with_durations_indexed = sorted(
-            items_with_durations_indexed, key=lambda tup: str(tup[0])
+            items_with_durations_indexed, key=lambda tup: tup[0].nodeid
         )
 
         # sort in ascending order
