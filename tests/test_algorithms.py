@@ -1,5 +1,6 @@
 import itertools
 from collections import namedtuple
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pytest
@@ -16,6 +17,17 @@ from pytest_split.algorithms import (
 
 item = namedtuple("item", "nodeid")  # noqa: PYI024
 
+
+@dataclass
+class DummyPytestItem:
+    name: str
+    nodeid: str
+
+    def __repr__(self) -> str:
+        return "<{} {}>".format(self.__class__.__name__, getattr(self, "name", None))
+
+    def __eq__(self, value: object) -> bool:
+        self.nodeid == value.nodeid
 
 class TestAlgorithms:
     @pytest.mark.parametrize("algo_name", Algorithms.names())
@@ -140,6 +152,45 @@ class TestAlgorithms:
         for a in Algorithms.names():
             assert issubclass(Algorithms[a].value.__class__, AlgorithmBase)
 
+    def test__split_tests_correctly_same_names_with_real_items(self, tmp_path):
+        """Test that least_duration algorithm works correctly with real pytest Items
+        that have same names but different paths."""
+        items = [
+            DummyPytestItem(
+                name="test_something_a", nodeid="dir_a/test.py::test_something_a"
+            ),
+            DummyPytestItem(
+                name="test_something_a", nodeid="dir_b/test.py::test_something_a"
+            ),
+            DummyPytestItem(
+                name="test_something_b", nodeid="dir_a/test.py::test_something_b"
+            ),
+            DummyPytestItem(
+                name="test_something_b", nodeid="dir_b/test.py::test_something_b"
+            ),
+        ]
+
+        first_randomization = (0, 1, 2, 3)
+        second_randomization = (1, 0, 3, 2)
+
+        expected_groups = [[items[0], items[1]], [items[2], items[3]]]
+
+        durations = {item.nodeid: 1 for item in items}
+
+        algo = Algorithms["least_duration"].value
+        split_number = 2
+
+        for randomization in (first_randomization, second_randomization):
+            randomized_items = [items[index] for index in randomization]
+            splits = algo(
+                splits=split_number, items=randomized_items, durations=durations
+            )
+
+            for index, group in enumerate(splits):
+                assert (
+                    sorted(group.selected, key=lambda item: item.nodeid)
+                    == expected_groups[index]
+                )
 
 class MyAlgorithm(AlgorithmBase):
     def __call__(self, a, b, c):
