@@ -2,6 +2,7 @@ import enum
 import heapq
 from abc import ABC, abstractmethod
 from operator import itemgetter
+from statistics import mean
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
@@ -154,20 +155,20 @@ def _get_items_with_durations(
     items: "List[nodes.Item]", durations: "Dict[str, float]"
 ) -> "List[Tuple[nodes.Item, float]]":
     durations = _remove_irrelevant_durations(items, durations)
-    avg_duration_per_test = _get_avg_duration_per_test(durations)
+    mean_duration_per_test = _get_mean_duration_per_test(durations)
     items_with_durations = [
-        (item, durations.get(item.nodeid, avg_duration_per_test)) for item in items
+        (item, durations.get(item.nodeid, mean_duration_per_test)) for item in items
     ]
     return items_with_durations
 
 
-def _get_avg_duration_per_test(durations: "Dict[str, float]") -> float:
+def _get_mean_duration_per_test(durations: "Dict[str, float]") -> float:
     if durations:
-        avg_duration_per_test = sum(durations.values()) / len(durations)
+        mean_duration_per_test = mean(durations.values())
     else:
         # If there are no durations, give every test the same arbitrary value
-        avg_duration_per_test = 1
-    return avg_duration_per_test
+        mean_duration_per_test = 1
+    return mean_duration_per_test
 
 
 def _remove_irrelevant_durations(
