@@ -47,7 +47,7 @@ pytest --splits 3 --group 3
 ```
 
 Time goes by, new tests are added and old ones are removed/renamed during development. No worries!
-`pytest-split` assumes average test execution time (calculated based on the stored information) for every test which does not have duration information stored.
+`pytest-split` assumes mean test execution time (calculated based on the stored information) for every test which does not have duration information stored.
 Thus, there's no need to store durations after changing the test suite.
 However, when there are major changes in the suite compared to what's stored in .test_durations, it's recommended to update the duration information with `--store-durations` to ensure that the splitting is in balance.
 
