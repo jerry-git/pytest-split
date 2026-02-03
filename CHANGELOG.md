@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.11.0] - 2026-02-03
 ### Added
 - Support for pytest 9.x
 - Support for Python 3.14
@@ -62,7 +64,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Durations file content in prettier format, see https://github.com/jerry-git/pytest-split/pull/31
 
-[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.10.0...master
+[Unreleased]: https://github.com/jerry-git/pytest-split/compare/0.11.0...master
+[0.11.0]: https://github.com/jerry-git/pytest-split/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/jerry-git/pytest-split/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/jerry-git/pytest-split/compare/0.8.2...0.9.0
 [0.8.2]: https://github.com/jerry-git/pytest-split/compare/0.8.1...0.8.2
