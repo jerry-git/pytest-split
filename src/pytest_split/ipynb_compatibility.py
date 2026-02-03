@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import List
-
     from pytest_split.algorithms import TestGroup
 
 
@@ -45,8 +43,8 @@ def ensure_ipynb_compatibility(group: "TestGroup", items: list) -> None:  # type
 
 
 def _find_sibiling_ipynb_cells(
-    ipynb_node_id: str, item_node_ids: "List[str]"
-) -> "List[str]":
+    ipynb_node_id: str, item_node_ids: "list[str]"
+) -> "list[str]":
     """
     Returns all sibling IPyNb cells given an IPyNb cell nodeid.
     """

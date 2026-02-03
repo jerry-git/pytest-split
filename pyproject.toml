@@ -18,8 +18,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -34,7 +32,7 @@ packages = [{ include = 'pytest_split', from = 'src' }]
 
 
 [tool.poetry.dependencies]
-python = ">=3.8.1, <4.0"
+python = ">=3.10, <4.0"
 pytest = "^5 | ^6 | ^7 | ^8 | ^9"
 
 
@@ -62,7 +60,7 @@ slowest-tests = "pytest_split.cli:list_slowest_tests"
 pytest-split = "pytest_split.plugin"
 
 [tool.black]
-target-version = ["py37", "py38", "py39"]
+target-version = ["py310", "py311", "py312", "py313", "py314"]
 include = '\.pyi?$'
 
 [tool.pytest.ini_options]
@@ -94,7 +92,7 @@ disallow_untyped_calls = false
 
 
 [tool.ruff]
-target-version = "py38" # The lowest supported version
+target-version = "py310" # The lowest supported version
 
 [tool.ruff.lint]
 # By default, enable all the lint rules.

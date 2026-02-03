@@ -5,14 +5,12 @@ from operator import itemgetter
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Tuple
-
     from _pytest import nodes
 
 
 class TestGroup(NamedTuple):
-    selected: "List[nodes.Item]"
-    deselected: "List[nodes.Item]"
+    selected: "list[nodes.Item]"
+    deselected: "list[nodes.Item]"
     duration: float
 
 
@@ -21,8 +19,8 @@ class AlgorithmBase(ABC):
 
     @abstractmethod
     def __call__(
-        self, splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]"
-    ) -> "List[TestGroup]":
+        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+    ) -> "list[TestGroup]":
         pass
 
     def __hash__(self) -> int:
@@ -52,8 +50,8 @@ class LeastDurationAlgorithm(AlgorithmBase):
     """
 
     def __call__(
-        self, splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]"
-    ) -> "List[TestGroup]":
+        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+    ) -> "list[TestGroup]":
         items_with_durations = _get_items_with_durations(items, durations)
 
         # add index of item in list
@@ -71,12 +69,12 @@ class LeastDurationAlgorithm(AlgorithmBase):
             items_with_durations_indexed, key=lambda tup: tup[1], reverse=True
         )
 
-        selected: List[List[Tuple[nodes.Item, int]]] = [[] for _ in range(splits)]
-        deselected: List[List[nodes.Item]] = [[] for _ in range(splits)]
-        duration: List[float] = [0 for _ in range(splits)]
+        selected: list[list[tuple[nodes.Item, int]]] = [[] for _ in range(splits)]
+        deselected: list[list[nodes.Item]] = [[] for _ in range(splits)]
+        duration: list[float] = [0 for _ in range(splits)]
 
         # create a heap of the form (summed_durations, group_index)
-        heap: List[Tuple[float, int]] = [(0, i) for i in range(splits)]
+        heap: list[tuple[float, int]] = [(0, i) for i in range(splits)]
         heapq.heapify(heap)
         for item, item_duration, original_index in sorted_items_with_durations:
             # get group with smallest sum
@@ -122,14 +120,14 @@ class DurationBasedChunksAlgorithm(AlgorithmBase):
     """
 
     def __call__(
-        self, splits: int, items: "List[nodes.Item]", durations: "Dict[str, float]"
-    ) -> "List[TestGroup]":
+        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+    ) -> "list[TestGroup]":
         items_with_durations = _get_items_with_durations(items, durations)
         time_per_group = sum(map(itemgetter(1), items_with_durations)) / splits
 
-        selected: List[List[nodes.Item]] = [[] for i in range(splits)]
-        deselected: List[List[nodes.Item]] = [[] for i in range(splits)]
-        duration: List[float] = [0 for i in range(splits)]
+        selected: list[list[nodes.Item]] = [[] for i in range(splits)]
+        deselected: list[list[nodes.Item]] = [[] for i in range(splits)]
+        duration: list[float] = [0 for i in range(splits)]
 
         group_idx = 0
         for item, item_duration in items_with_durations:
@@ -151,8 +149,8 @@ class DurationBasedChunksAlgorithm(AlgorithmBase):
 
 
 def _get_items_with_durations(
-    items: "List[nodes.Item]", durations: "Dict[str, float]"
-) -> "List[Tuple[nodes.Item, float]]":
+    items: "list[nodes.Item]", durations: "dict[str, float]"
+) -> "list[tuple[nodes.Item, float]]":
     durations = _remove_irrelevant_durations(items, durations)
     avg_duration_per_test = _get_avg_duration_per_test(durations)
     items_with_durations = [
@@ -161,7 +159,7 @@ def _get_items_with_durations(
     return items_with_durations
 
 
-def _get_avg_duration_per_test(durations: "Dict[str, float]") -> float:
+def _get_avg_duration_per_test(durations: "dict[str, float]") -> float:
     if durations:
         avg_duration_per_test = sum(durations.values()) / len(durations)
     else:
@@ -171,8 +169,8 @@ def _get_avg_duration_per_test(durations: "Dict[str, float]") -> float:
 
 
 def _remove_irrelevant_durations(
-    items: "List[nodes.Item]", durations: "Dict[str, float]"
-) -> "Dict[str, float]":
+    items: "list[nodes.Item]", durations: "dict[str, float]"
+) -> "dict[str, float]":
     # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
     test_ids = [item.nodeid for item in items]
     durations = {name: durations[name] for name in test_ids if name in durations}
@@ -184,5 +182,5 @@ class Algorithms(enum.Enum):
     least_duration = LeastDurationAlgorithm()
 
     @staticmethod
-    def names() -> "List[str]":
+    def names() -> "list[str]":
         return [x.name for x in Algorithms]
