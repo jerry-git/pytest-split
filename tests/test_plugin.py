@@ -306,7 +306,9 @@ class TestSplitToSuites:
             for group in range(1, 3)
         ]
 
-        for result, expected_tests in zip(results, expected_tests_per_group):
+        for result, expected_tests in zip(
+            results, expected_tests_per_group, strict=False
+        ):
             result.assertoutcome(passed=len(expected_tests))
             assert _passed_test_names(result) == expected_tests
 

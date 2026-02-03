@@ -10,8 +10,6 @@ from pytest_split import algorithms
 from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
 if TYPE_CHECKING:
-    from typing import Dict, List, Optional, Union
-
     from _pytest import nodes
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
@@ -77,7 +75,7 @@ def pytest_addoption(parser: "Parser") -> None:
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_cmdline_main(config: "Config") -> "Optional[Union[int, ExitCode]]":
+def pytest_cmdline_main(config: "Config") -> "int | ExitCode | None":
     """
     Validate options.
     """
@@ -153,7 +151,7 @@ class PytestSplitPlugin(Base):
 
     @hookimpl(trylast=True)
     def pytest_collection_modifyitems(
-        self, config: "Config", items: "List[nodes.Item]"
+        self, config: "Config", items: "list[nodes.Item]"
     ) -> None:
         """
         Collect and select the tests we want to run, and deselect the rest.
@@ -193,7 +191,7 @@ class PytestSplitCachePlugin(Base):
         https://github.com/pytest-dev/pytest/blob/main/src/_pytest/main.py#L308
         """
         terminal_reporter = self.config.pluginmanager.get_plugin("terminalreporter")
-        test_durations: Dict[str, float] = {}
+        test_durations: dict[str, float] = {}
 
         for test_reports in terminal_reporter.stats.values():  # type: ignore[union-attr]
             for test_report in test_reports:

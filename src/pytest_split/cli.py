@@ -1,9 +1,5 @@
 import argparse
 import json
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Dict
 
 
 def list_slowest_tests() -> None:
@@ -28,7 +24,7 @@ def list_slowest_tests() -> None:
     return _list_slowest_tests(json.load(args.durations_path), args.count)
 
 
-def _list_slowest_tests(durations: "Dict[str, float]", count: int) -> None:
+def _list_slowest_tests(durations: "dict[str, float]", count: int) -> None:
     slowest_tests = tuple(
         sorted(durations.items(), key=lambda item: item[1], reverse=True)
     )[:count]

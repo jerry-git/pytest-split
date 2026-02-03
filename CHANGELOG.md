@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Migrated `poetry.dev-dependencies` to `poetry.group.dev.dependencies`
 
+### Removed
+- Support for Python 3.8 and 3.9 (end-of-life)
+
 ## [0.10.0] - 2024-10-16
 ### Added
 - Support for Python 3.13.
