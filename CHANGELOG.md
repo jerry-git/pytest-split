@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - Support for pytest 9.x
+- Support for Python 3.14
 
 ### Changed
 - Migrated `poetry.dev-dependencies` to `poetry.group.dev.dependencies`
