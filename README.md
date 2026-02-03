@@ -80,6 +80,7 @@ Each algorithm makes different tradeoffs, but generally `least_duration` should 
 | least_duration | ❌                       | ✅                       | Better        | ✅                         |
 
 Explanation of the terms in the table:
+
 * Absolute Order: whether each group contains all tests between first and last element in the same order as the original list of tests
 * Relative Order: whether each test in each group has the same relative order to its neighbours in the group as in the original list of tests
 * Works with random ordering: whether the algorithm works with test-shuffling tools such as [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly)
