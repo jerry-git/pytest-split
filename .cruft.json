@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/woltapp/wolt-python-package-cookiecutter",
-  "commit": "ef35f9eae64cee9e05dfc13d68a386de845407d1",
+  "commit": "b25684a2c63387153b83a1cc03ea332be8c8279a",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -11,7 +11,8 @@
       "project_slug": "pytest-split",
       "package_name": "pytest_split",
       "project_short_description": "Pytest plugin which splits the test suite to equally sized \"sub suites\" based on test execution time.",
-      "_template": "https://github.com/woltapp/wolt-python-package-cookiecutter"
+      "_template": "https://github.com/woltapp/wolt-python-package-cookiecutter",
+      "_commit": "b25684a2c63387153b83a1cc03ea332be8c8279a"
     }
   },
   "directory": null
