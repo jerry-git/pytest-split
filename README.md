@@ -39,6 +39,20 @@ The file path is configurable via `--durations-path` CLI option.
 pytest --store-durations
 ```
 
+With the `--store-durations` flag, you can also specify how test case runtime is managed:
+
+- `keep`: Only new test cases' runtime are added. The pre-existing durations in the .test_durations file are reused. This is useful when you've added new tests and want to keep the historical durations of older tests.
+
+```sh
+pytest --store-durations=keep
+```
+
+- `replace` (Default): All test case runtimes in the .test_durations file are replaced with the new ones from the current run.
+
+```sh
+pytest --store-durations=replace
+```
+
 Then we can have as many splits as we want:
 ```sh
 pytest --splits 3 --group 1

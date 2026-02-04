@@ -77,4 +77,3 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [0.6.0]: https://github.com/jerry-git/pytest-split/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/jerry-git/pytest-split/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/jerry-git/pytest-split/tree/0.4.0
-
