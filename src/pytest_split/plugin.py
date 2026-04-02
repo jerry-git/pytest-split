@@ -17,7 +17,9 @@ if TYPE_CHECKING:
 
 
 # Ugly hack for freezegun compatibility: https://github.com/spulec/freezegun/issues/286
-STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = 60 * 10  # seconds
+STORE_DURATIONS_SETUP_AND_TEARDOWN_THRESHOLD = float(
+    os.environ.get("PYTEST_SPLIT_SETUP_TEARDOWN_THRESHOLD", 60 * 10)
+)  # seconds
 
 
 def pytest_addoption(parser: "Parser") -> None:

@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Fixed
 - Fix malformed bullet points rendering in GitHub Pages documentation
+- Make `STORE_DURATIONS_TEARDOWN_THRESHOLD` controllable through an environment variable.
 
 ## [0.11.0] - 2026-02-03
 ### Added
