@@ -44,7 +44,8 @@ jobs:
       - uses: ./.github/actions/python-poetry-env
         with:
           python-version: ${{ matrix.python-version }}
-      - run: poetry run pytest
+      - run: poetry run coverage run -m pytest
+      - run: poetry run coverage report
 
   docs:
     runs-on: ubuntu-latest

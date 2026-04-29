@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 from pytest_split.algorithms import (
     AlgorithmBase,
     Algorithms,
+    TestGroup,
 )
 
 item = namedtuple("item", "nodeid")  # noqa: PYI024
@@ -21,20 +22,25 @@ class TestAlgorithms:
         durations = {"a": 1, "b": 1, "c": 1}
         items = [item(x) for x in durations]
         algo = Algorithms[algo_name].value
+
         first, second, third = algo(splits=3, items=items, durations=durations)
 
         # each split should have one test
-        assert first.selected == [item("a")]
-        assert first.deselected == [item("b"), item("c")]
-        assert first.duration == 1
-
-        assert second.selected == [item("b")]
-        assert second.deselected == [item("a"), item("c")]
-        assert second.duration == 1
-
-        assert third.selected == [item("c")]
-        assert third.deselected == [item("a"), item("b")]
-        assert third.duration == 1
+        assert first == TestGroup(
+            selected=[item("a")],
+            deselected=[item("b"), item("c")],
+            duration=1,
+        )
+        assert second == TestGroup(
+            selected=[item("b")],
+            deselected=[item("a"), item("c")],
+            duration=1,
+        )
+        assert third == TestGroup(
+            selected=[item("c")],
+            deselected=[item("a"), item("b")],
+            duration=1,
+        )
 
     @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_tests_handles_tests_in_durations_but_missing_from_items(
@@ -43,39 +49,83 @@ class TestAlgorithms:
         durations = {"a": 1, "b": 1}
         items = [item(x) for x in ["a"]]
         algo = Algorithms[algo_name].value
-        splits = algo(splits=2, items=items, durations=durations)
 
-        first, second = splits
-        assert first.selected == [item("a")]
-        assert second.selected == []
+        first, second = algo(splits=2, items=items, durations=durations)
+
+        assert first == TestGroup(
+            selected=[item("a")], deselected=[], duration=1
+        )
+        assert second == TestGroup(
+            selected=[], deselected=[item("a")], duration=0
+        )
 
     @pytest.mark.parametrize("algo_name", Algorithms.names())
     def test__split_tests_handles_tests_with_missing_durations(self, algo_name):
         durations = {"a": 1}
         items = [item(x) for x in ["a", "b"]]
         algo = Algorithms[algo_name].value
-        splits = algo(splits=2, items=items, durations=durations)
 
-        first, second = splits
-        assert first.selected == [item("a")]
-        assert second.selected == [item("b")]
+        first, second = algo(splits=2, items=items, durations=durations)
+
+        assert first == TestGroup(
+            selected=[item("a")], deselected=[item("b")], duration=1
+        )
+        assert second == TestGroup(
+            selected=[item("b")], deselected=[item("a")], duration=1
+        )
 
     def test__split_test_handles_large_duration_at_end(self):
         """NOTE: only least_duration does this correctly"""
         durations = {"a": 1, "b": 1, "c": 1, "d": 3}
         items = [item(x) for x in ["a", "b", "c", "d"]]
         algo = Algorithms["least_duration"].value
-        splits = algo(splits=2, items=items, durations=durations)
 
-        first, second = splits
-        assert first.selected == [item("d")]
-        assert second.selected == [item(x) for x in ["a", "b", "c"]]
+        first, second = algo(splits=2, items=items, durations=durations)
+
+        assert first == TestGroup(
+            selected=[item("d")],
+            deselected=[item("a"), item("b"), item("c")],
+            duration=3,
+        )
+        assert second == TestGroup(
+            selected=[item("a"), item("b"), item("c")],
+            deselected=[item("d")],
+            duration=3,
+        )
 
     @pytest.mark.parametrize(
         ("algo_name", "expected"),
         [
-            ("duration_based_chunks", [[item("a"), item("b")], [item("c"), item("d")]]),
-            ("least_duration", [[item("a"), item("c")], [item("b"), item("d")]]),
+            (
+                "duration_based_chunks",
+                [
+                    TestGroup(
+                        selected=[item("a"), item("b")],
+                        deselected=[item("c"), item("d")],
+                        duration=2,
+                    ),
+                    TestGroup(
+                        selected=[item("c"), item("d")],
+                        deselected=[item("a"), item("b")],
+                        duration=2,
+                    ),
+                ],
+            ),
+            (
+                "least_duration",
+                [
+                    TestGroup(
+                        selected=[item("a"), item("c")],
+                        deselected=[item("b"), item("d")],
+                        duration=2,
+                    ),
+                    TestGroup(
+                        selected=[item("b"), item("d")],
+                        deselected=[item("a"), item("c")],
+                        duration=2,
+                    ),
+                ],
+            ),
         ],
     )
     def test__split_tests_calculates_avg_test_duration_only_on_present_tests(
@@ -88,23 +138,43 @@ class TestAlgorithms:
         durations = {"b": 1, "c": 1, "d": 1, "e": 10000}
         items = [item(x) for x in ["a", "b", "c", "d"]]
         algo = Algorithms[algo_name].value
-        splits = algo(splits=2, items=items, durations=durations)
 
-        first, second = splits
-        expected_first, expected_second = expected
-        assert first.selected == expected_first
-        assert second.selected == expected_second
+        groups = algo(splits=2, items=items, durations=durations)
+
+        assert groups == expected
 
     @pytest.mark.parametrize(
         ("algo_name", "expected"),
         [
             (
                 "duration_based_chunks",
-                [[item("a"), item("b"), item("c"), item("d"), item("e")], []],
+                [
+                    TestGroup(
+                        selected=[item(x) for x in "abcde"],
+                        deselected=[],
+                        duration=10014,
+                    ),
+                    TestGroup(
+                        selected=[],
+                        deselected=[item(x) for x in "abcde"],
+                        duration=0,
+                    ),
+                ],
             ),
             (
                 "least_duration",
-                [[item("e")], [item("a"), item("b"), item("c"), item("d")]],
+                [
+                    TestGroup(
+                        selected=[item("e")],
+                        deselected=[item(x) for x in "dcba"],
+                        duration=10000,
+                    ),
+                    TestGroup(
+                        selected=[item(x) for x in "abcd"],
+                        deselected=[item("e")],
+                        duration=14,
+                    ),
+                ],
             ),
         ],
     )
@@ -112,12 +182,10 @@ class TestAlgorithms:
         durations = {"a": 2, "b": 3, "c": 4, "d": 5, "e": 10000}
         items = [item(x) for x in ["a", "b", "c", "d", "e"]]
         algo = Algorithms[algo_name].value
-        splits = algo(splits=2, items=items, durations=durations)
 
-        first, second = splits
-        expected_first, expected_second = expected
-        assert first.selected == expected_first
-        assert second.selected == expected_second
+        groups = algo(splits=2, items=items, durations=durations)
+
+        assert groups == expected
 
     def test__split_tests_same_set_regardless_of_order(self):
         """NOTE: only least_duration does this correctly"""
