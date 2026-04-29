@@ -1,7 +1,6 @@
 import enum
 import heapq
 from abc import ABC, abstractmethod
-from operator import itemgetter
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
@@ -19,7 +18,7 @@ class AlgorithmBase(ABC):
 
     @abstractmethod
     def __call__(
-        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+        self, splits: int, durations: "dict[nodes.Item, float]"
     ) -> "list[TestGroup]":
         pass
 
@@ -43,25 +42,22 @@ class LeastDurationAlgorithm(AlgorithmBase):
     that use this plugin. Due to issue #25 this might not always be the case.
 
     :param splits: How many groups we're splitting in.
-    :param items: Test items passed down by Pytest.
-    :param durations: Our cached test runtimes. Assumes contains timings only of relevant tests
+    :param durations: Mapping from each test item to its duration. Build it with :func:`compute_durations`.
     :return:
         List of groups
     """
 
     def __call__(
-        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+        self, splits: int, durations: "dict[nodes.Item, float]"
     ) -> "list[TestGroup]":
-        items_with_durations = _get_items_with_durations(items, durations)
-
         # add index of item in list
         items_with_durations_indexed = [
-            (*tup, i) for i, tup in enumerate(items_with_durations)
+            (item, dur, i) for i, (item, dur) in enumerate(durations.items())
         ]
 
         # Sort by name to ensure it's always the same order
         items_with_durations_indexed = sorted(
-            items_with_durations_indexed, key=lambda tup: str(tup[0])
+            items_with_durations_indexed, key=lambda tup: tup[0].nodeid
         )
 
         # sort in ascending order
@@ -114,23 +110,21 @@ class DurationBasedChunksAlgorithm(AlgorithmBase):
     and creating group_1 = items[0:i_0], group_2 = items[i_0, i_1], group_3 = items[i_1, i_2], ...
 
     :param splits: How many groups we're splitting in.
-    :param items: Test items passed down by Pytest.
-    :param durations: Our cached test runtimes. Assumes contains timings only of relevant tests
+    :param durations: Mapping from each test item to its duration. Build it with :func:`compute_durations`.
     :return: List of TestGroup
     """
 
     def __call__(
-        self, splits: int, items: "list[nodes.Item]", durations: "dict[str, float]"
+        self, splits: int, durations: "dict[nodes.Item, float]"
     ) -> "list[TestGroup]":
-        items_with_durations = _get_items_with_durations(items, durations)
-        time_per_group = sum(map(itemgetter(1), items_with_durations)) / splits
+        time_per_group = sum(durations.values()) / splits
 
         selected: list[list[nodes.Item]] = [[] for i in range(splits)]
         deselected: list[list[nodes.Item]] = [[] for i in range(splits)]
         duration: list[float] = [0 for i in range(splits)]
 
         group_idx = 0
-        for item, item_duration in items_with_durations:
+        for item, item_duration in durations.items():
             if duration[group_idx] >= time_per_group:
                 group_idx += 1
 
@@ -148,33 +142,28 @@ class DurationBasedChunksAlgorithm(AlgorithmBase):
         ]
 
 
-def _get_items_with_durations(
-    items: "list[nodes.Item]", durations: "dict[str, float]"
-) -> "list[tuple[nodes.Item, float]]":
-    durations = _remove_irrelevant_durations(items, durations)
-    avg_duration_per_test = _get_avg_duration_per_test(durations)
-    items_with_durations = [
-        (item, durations.get(item.nodeid, avg_duration_per_test)) for item in items
-    ]
-    return items_with_durations
+def compute_durations(
+    items: "list[nodes.Item]", cached_durations: "dict[str, float]"
+) -> "dict[nodes.Item, float]":
+    """
+    Build the splitting input from collected items and their cached durations.
 
-
-def _get_avg_duration_per_test(durations: "dict[str, float]") -> float:
-    if durations:
-        avg_duration_per_test = sum(durations.values()) / len(durations)
+    Items missing from ``cached_durations`` get the average duration of the
+    cached entries that are relevant to this suite; with no cached data at
+    all, every item gets ``1`` as a placeholder.
+    """
+    # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
+    relevant = {
+        item.nodeid: cached_durations[item.nodeid]
+        for item in items
+        if item.nodeid in cached_durations
+    }
+    if relevant:
+        avg = sum(relevant.values()) / len(relevant)
     else:
         # If there are no durations, give every test the same arbitrary value
-        avg_duration_per_test = 1
-    return avg_duration_per_test
-
-
-def _remove_irrelevant_durations(
-    items: "list[nodes.Item]", durations: "dict[str, float]"
-) -> "dict[str, float]":
-    # Filtering down durations to relevant ones ensures the avg isn't skewed by irrelevant data
-    test_ids = [item.nodeid for item in items]
-    durations = {name: durations[name] for name in test_ids if name in durations}
-    return durations
+        avg = 1
+    return {item: relevant.get(item.nodeid, avg) for item in items}
 
 
 class Algorithms(enum.Enum):

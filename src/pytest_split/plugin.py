@@ -160,7 +160,8 @@ class PytestSplitPlugin(Base):
         group_idx: int = config.option.group
 
         algo = algorithms.Algorithms[config.option.splitting_algorithm].value
-        groups = algo(splits, items, self.cached_durations)
+        durations = algorithms.compute_durations(items, self.cached_durations)
+        groups = algo(splits, durations)
         group = groups[group_idx - 1]
 
         ensure_ipynb_compatibility(group, items)
