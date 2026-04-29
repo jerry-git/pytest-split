@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 import pytest
-from pytest_split.algorithms import Algorithms
+from pytest_split.algorithms import Algorithms, compute_durations
 from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
 item = namedtuple("item", "nodeid")  # noqa: PYI024
@@ -29,7 +29,7 @@ class TestIPyNb:
         }
         items = [item(x) for x in durations]
         algo = Algorithms[algo_name].value
-        groups = algo(splits=3, items=items, durations=durations)
+        groups = algo(splits=3, durations=compute_durations(items, durations))
 
         assert groups[0].selected == [
             item(nodeid="temp/nbs/test_1.ipynb::Cell 0"),

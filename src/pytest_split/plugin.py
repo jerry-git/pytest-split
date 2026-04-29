@@ -160,8 +160,15 @@ class PytestSplitPlugin(Base):
         group_idx: int = config.option.group
 
         algo = algorithms.Algorithms[config.option.splitting_algorithm].value
-        groups = algo(splits, items, self.cached_durations)
-        group = groups[group_idx - 1]
+        durations = algorithms.compute_durations(items, self.cached_durations)
+        # Pass items in canonical (nodeid-sorted) order so group membership is
+        # independent of the order pytest happened to collect them.
+        durations = {
+            item: durations[item]
+            for item in sorted(durations, key=lambda item: item.nodeid)
+        }
+        groups = algo(splits, durations)
+        group = algorithms.select_in_collection_order(groups[group_idx - 1], items)
 
         ensure_ipynb_compatibility(group, items)
 

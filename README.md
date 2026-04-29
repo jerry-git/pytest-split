@@ -60,9 +60,12 @@ Lists the slowest tests based on the information stored in the test durations fi
 
 ## Interactions with other pytest plugins
 * [`pytest-random-order`](https://github.com/jbasko/pytest-random-order) and [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly):
-   ⚠️ `pytest-split` running with the `duration_based_chunks` algorithm is **incompatible** with test-order-randomization plugins.
-  Test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all.
-  Instead, a global random seed needs to be computed before running the tests (for example using `$RANDOM` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.
+  Group **membership** is a pure function of the (nodeid, duration) multiset
+  and the requested split count for both algorithms, so test-order-randomisation
+  plugins no longer cause tests to drift between groups. Within-group execution
+  order still follows pytest's collection order, so randomisation plugins
+  continue to influence the order in which a group's tests run — typically
+  the desired interaction.
 
 * [`nbval`](https://github.com/computationalmodelling/nbval): `pytest-split` could, in principle, break up a single IPython Notebook into different test groups. This most likely causes broken up pieces to fail (for the very least, package `import`s are usually done at Cell 1, and so, any broken up piece that doesn't contain Cell 1 will certainly fail). To avoid this, after splitting step is done, test groups are reorganized based on a simple algorithm illustrated in the following cartoon:
 
@@ -74,18 +77,17 @@ where the letters (A to E) refer to individual IPython Notebooks, and the number
 The plugin supports multiple algorithms to split tests into groups.
 Each algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.
 
-| Algorithm      | Maintains Absolute Order | Maintains Relative Order | Split Quality | Works with random ordering |
-|----------------|--------------------------|--------------------------|---------------|----------------------------|
-| duration_based_chunks | ✅                | ✅                       | Good          | ❌                         |
-| least_duration | ❌                       | ✅                       | Better        | ✅                         |
+| Algorithm      | Maintains Relative Order | Split Quality | Stable across collection orders |
+|----------------|--------------------------|---------------|---------------------------------|
+| duration_based_chunks | ✅                | Good          | ✅                              |
+| least_duration | ✅                       | Better        | ✅                              |
 
 Explanation of the terms in the table:
 
-* Absolute Order: whether each group contains all tests between first and last element in the same order as the original list of tests
-* Relative Order: whether each test in each group has the same relative order to its neighbours in the group as in the original list of tests
-* Works with random ordering: whether the algorithm works with test-shuffling tools such as [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly)
+* Relative Order: whether each test in each group has the same relative order to its neighbours in the group as in the original (collection) list of tests.
+* Stable across collection orders: whether each group's *membership* is a pure function of the (nodeid, duration) multiset and the requested split count, irrespective of pytest's collection order. Both algorithms satisfy this; within-group execution order continues to follow pytest's collection order.
 
-The `duration_based_chunks` algorithm aims to find optimal boundaries for the list of tests and every test group contains all tests between the start and end boundary.
+The `duration_based_chunks` algorithm aims to find optimal boundaries by walking the tests in canonical (nodeid-sorted) order and packing them into contiguous slices; the chosen group is then emitted to pytest in collection order.
 The `least_duration` algorithm walks the list of tests and assigns each test to the group with the smallest current duration.
 
 

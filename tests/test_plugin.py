@@ -136,30 +136,32 @@ class TestSplitToSuites:
                 "test_10",
             ],
         ),
+        # ``duration_based_chunks`` packs items in canonical (nodeid-sorted)
+        # order, hence ``test_10`` lands among the early tests.
         (
             2,
             1,
             "duration_based_chunks",
-            ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_7"],
+            ["test_1", "test_2", "test_3", "test_4", "test_5", "test_6", "test_10"],
         ),
-        (2, 2, "duration_based_chunks", ["test_8", "test_9", "test_10"]),
+        (2, 2, "duration_based_chunks", ["test_7", "test_8", "test_9"]),
         (2, 1, "least_duration", ["test_3", "test_5", "test_7", "test_9", "test_10"]),
         (2, 2, "least_duration", ["test_1", "test_2", "test_4", "test_6", "test_8"]),
         (
             3,
             1,
             "duration_based_chunks",
-            ["test_1", "test_2", "test_3", "test_4", "test_5"],
+            ["test_1", "test_2", "test_3", "test_10"],
         ),
-        (3, 2, "duration_based_chunks", ["test_6", "test_7", "test_8"]),
-        (3, 3, "duration_based_chunks", ["test_9", "test_10"]),
+        (3, 2, "duration_based_chunks", ["test_4", "test_5", "test_6", "test_7"]),
+        (3, 3, "duration_based_chunks", ["test_8", "test_9"]),
         (3, 1, "least_duration", ["test_3", "test_8", "test_10"]),
         (3, 2, "least_duration", ["test_4", "test_6", "test_9"]),
         (3, 3, "least_duration", ["test_1", "test_2", "test_5", "test_7"]),
-        (4, 1, "duration_based_chunks", ["test_1", "test_2", "test_3", "test_4"]),
-        (4, 2, "duration_based_chunks", ["test_5", "test_6", "test_7"]),
-        (4, 3, "duration_based_chunks", ["test_8", "test_9"]),
-        (4, 4, "duration_based_chunks", ["test_10"]),
+        (4, 1, "duration_based_chunks", ["test_1", "test_2", "test_10"]),
+        (4, 2, "duration_based_chunks", ["test_3", "test_4", "test_5", "test_6"]),
+        (4, 3, "duration_based_chunks", ["test_7", "test_8"]),
+        (4, 4, "duration_based_chunks", ["test_9"]),
         (4, 1, "least_duration", ["test_9", "test_10"]),
         (4, 2, "least_duration", ["test_1", "test_4", "test_6"]),
         (4, 3, "least_duration", ["test_2", "test_5", "test_7"]),
@@ -239,8 +241,14 @@ class TestSplitToSuites:
         result = example_suite.inline_run(
             "--splits", "3", "--group", "1", "--durations-path", durations_path
         )
-        result.assertoutcome(passed=4)
-        assert _passed_test_names(result) == ["test_1", "test_2", "test_3", "test_4"]
+        result.assertoutcome(passed=5)
+        assert _passed_test_names(result) == [
+            "test_1",
+            "test_2",
+            "test_3",
+            "test_4",
+            "test_10",
+        ]
 
         result = example_suite.inline_run(
             "--splits", "3", "--group", "2", "--durations-path", durations_path
@@ -251,8 +259,8 @@ class TestSplitToSuites:
         result = example_suite.inline_run(
             "--splits", "3", "--group", "3", "--durations-path", durations_path
         )
-        result.assertoutcome(passed=3)
-        assert _passed_test_names(result) == ["test_8", "test_9", "test_10"]
+        result.assertoutcome(passed=2)
+        assert _passed_test_names(result) == ["test_8", "test_9"]
 
     def test_handles_case_of_no_durations_for_group(
         self, example_suite, durations_path
