@@ -63,16 +63,12 @@ pytest-split = "pytest_split.plugin"
 target-version = ["py310", "py311", "py312", "py313", "py314"]
 include = '\.pyi?$'
 
-[tool.pytest.ini_options]
-addopts = """\
-    --cov pytest_split \
-    --cov tests \
-    --cov-report term-missing \
-    --no-cov-on-fail \
-"""
+[tool.coverage.run]
+source = ["pytest_split"]
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 95
+show_missing = true
 exclude_lines = [
     'if TYPE_CHECKING:',
     'pragma: no cover'
