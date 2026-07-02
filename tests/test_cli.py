@@ -14,8 +14,7 @@ def durations_file(tmpdir):
     durations = {f"test_{i}": float(i) for i in range(1, 11)}
     with open(durations_path, "w") as f:
         json.dump(durations, f)
-    with open(durations_path) as f:
-        yield f
+    return durations_path
 
 
 def test_slowest_tests(durations_file):

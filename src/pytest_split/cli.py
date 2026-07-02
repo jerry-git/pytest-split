@@ -11,7 +11,6 @@ def list_slowest_tests() -> None:
             "default is .test_durations in the current working directory"
         ),
         default=".test_durations",
-        type=argparse.FileType(),
     )
     parser.add_argument(
         "-c",
@@ -21,7 +20,9 @@ def list_slowest_tests() -> None:
         type=int,
     )
     args = parser.parse_args()
-    return _list_slowest_tests(json.load(args.durations_path), args.count)
+    with open(args.durations_path) as f:
+        durations = json.load(f)
+    return _list_slowest_tests(durations, args.count)
 
 
 def _list_slowest_tests(durations: "dict[str, float]", count: int) -> None:
