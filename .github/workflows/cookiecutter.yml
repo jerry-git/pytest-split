@@ -8,9 +8,9 @@ jobs:
   auto-update-project:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -68,7 +68,7 @@ jobs:
           # a PAT is required to be able to update workflows
           GITHUB_TOKEN: ${{ secrets.AUTO_UPDATE_GITHUB_TOKEN }}
         if: ${{ steps.changes.outputs.changed > 0 && env.GITHUB_TOKEN != 0 }}
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ env.GITHUB_TOKEN }}
           commit-message: >-
