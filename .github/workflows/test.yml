@@ -6,6 +6,9 @@ on:
     branches:
       - "**"
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   actionlint:
     runs-on: ubuntu-latest
