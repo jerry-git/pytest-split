@@ -313,6 +313,61 @@ class TestSplitToSuites:
             assert _passed_test_names(result) == expected_tests
 
 
+class TestNoSplit:
+    @pytest.mark.parametrize("algorithm", Algorithms.names())
+    def test_overrides_configured_splitting(self, example_suite, algorithm):
+        example_suite.makeini(
+            f"[pytest]\naddopts = --splits 2 --group 1 --splitting-algorithm {algorithm}"
+        )
+
+        result = example_suite.runpytest("--no-split")
+
+        result.assert_outcomes(passed=EXAMPLE_SUITE_TEST_COUNT)
+        assert "[pytest-split]" not in result.stdout.str()
+
+    @pytest.mark.parametrize(
+        "addopts",
+        [
+            "",
+            "--splits 2",
+            "--group 1",
+            "--splits 0 --group 1",
+            "--splits 2 --group 3",
+        ],
+    )
+    def test_ignores_unused_split_configuration(self, example_suite, addopts):
+        example_suite.makeini(f"[pytest]\naddopts = {addopts}")
+
+        result = example_suite.runpytest("--no-split")
+
+        result.assert_outcomes(passed=EXAMPLE_SUITE_TEST_COUNT)
+
+    def test_preserves_other_test_selection(self, example_suite):
+        example_suite.makeini("[pytest]\naddopts = --splits 2 --group 2")
+
+        result = example_suite.runpytest("--no-split", "-k", "test_1")
+
+        result.assert_outcomes(passed=2)
+        result.stdout.fnmatch_lines(
+            ["*collected 10 items / 8 deselected / 2 selected*"]
+        )
+
+    def test_still_stores_durations(self, example_suite, durations_path):
+        example_suite.makeini("[pytest]\naddopts = --splits 2 --group 1")
+
+        result = example_suite.runpytest(
+            "--no-split", "--store-durations", "--durations-path", durations_path
+        )
+
+        result.assert_outcomes(passed=EXAMPLE_SUITE_TEST_COUNT)
+        with open(durations_path) as f:
+            durations = json.load(f)
+        assert set(durations) == {
+            f"test_still_stores_durations.py::test_{num}"
+            for num in range(1, EXAMPLE_SUITE_TEST_COUNT + 1)
+        }
+
+
 class TestRaisesUsageErrors:
     def test_returns_nonzero_when_group_but_not_splits(self, example_suite, capsys):
         result = example_suite.inline_run("--group", "1")
