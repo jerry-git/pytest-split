@@ -56,6 +56,11 @@ def pytest_addoption(parser: "Parser") -> None:
         help="The group of tests that should be executed (first one is 1)",
     )
     group.addoption(
+        "--no-split",
+        action="store_true",
+        help="Disable test splitting, overriding --splits and --group.",
+    )
+    group.addoption(
         "--splitting-algorithm",
         dest="splitting_algorithm",
         type=str,
@@ -79,6 +84,9 @@ def pytest_cmdline_main(config: "Config") -> "int | ExitCode | None":
     """
     Validate options.
     """
+    if config.option.no_split:
+        return None
+
     group = config.getoption("group")
     splits = config.getoption("splits")
 
@@ -104,7 +112,7 @@ def pytest_configure(config: "Config") -> None:
     """
     Enable the plugins we need.
     """
-    if config.option.splits and config.option.group:
+    if not config.option.no_split and config.option.splits and config.option.group:
         config.pluginmanager.register(PytestSplitPlugin(config), "pytestsplitplugin")
 
     if config.option.store_durations:

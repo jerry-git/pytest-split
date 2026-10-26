@@ -46,6 +46,15 @@ pytest --splits 3 --group 2
 pytest --splits 3 --group 3
 ```
 
+To disable splitting for a single run, use `--no-split`. This overrides `--splits`
+and `--group`, including values configured in pytest's `addopts`:
+```sh
+pytest --no-split
+```
+
+Other pytest test selection options still apply. You can also combine `--no-split`
+with `--store-durations` to refresh duration information without splitting the suite.
+
 Time goes by, new tests are added and old ones are removed/renamed during development. No worries!
 `pytest-split` assumes average test execution time (calculated based on the stored information) for every test which does not have duration information stored.
 Thus, there's no need to store durations after changing the test suite.
