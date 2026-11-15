@@ -1,15 +1,20 @@
+import importlib.util
 import json
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
 from _pytest.config import create_terminal_writer, hookimpl
+from _pytest.pathlib import fnmatch_ex
 from _pytest.reports import TestReport
 
 from pytest_split import algorithms
 from pytest_split.ipynb_compatibility import ensure_ipynb_compatibility
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from _pytest import nodes
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
@@ -64,6 +69,14 @@ def pytest_addoption(parser: "Parser") -> None:
         choices=algorithms.Algorithms.names(),
     )
     group.addoption(
+        "--no-module-splits",
+        action="store_true",
+        help=(
+            "Keep each module's tests in the same group and skip importing and "
+            "collecting modules assigned to other groups."
+        ),
+    )
+    group.addoption(
         "--clean-durations",
         dest="clean_durations",
         action="store_true",
@@ -113,6 +126,131 @@ def pytest_configure(config: "Config") -> None:
         )
 
 
+def _ignore_module(path: Path, config: "Config") -> "bool | None":
+    if (
+        config.option.no_module_splits
+        and config.option.splits
+        and config.option.group
+        and path.is_file()
+    ):
+        plugin = config.pluginmanager.get_plugin("pytestsplitplugin")
+        if not isinstance(plugin, PytestSplitPlugin):
+            return None
+        group_idx = plugin.module_groups.get(_relative_path(path, config))
+        if group_idx is not None and group_idx != config.option.group - 1:
+            return True
+    return None
+
+
+def _relative_path(path: Path, config: "Config") -> str:
+    root_path = getattr(config, "rootpath", None)
+    if root_path is None:  # pytest < 6.1
+        root_path = Path(str(getattr(config, "rootdir")))  # noqa: B009
+    return Path(os.path.relpath(path, root_path)).as_posix()
+
+
+def _collection_path(argument: str, config: "Config") -> Path:
+    name = argument.split("::", 1)[0]
+    path = config.invocation_params.dir / name
+    if path.exists():
+        return path
+    if config.option.pyargs:
+        try:
+            spec = importlib.util.find_spec(name)
+        except (ImportError, ValueError):
+            spec = None
+        if spec is not None:
+            if spec.submodule_search_locations:
+                return Path(next(iter(spec.submodule_search_locations)))
+            if spec.origin is not None:
+                return Path(spec.origin)
+    return path
+
+
+def _module_paths(config: "Config", durations: "dict[str, float]") -> "set[str]":
+    """Discover candidate paths without importing test modules."""
+    patterns = [*config.getini("python_files"), "*.ipynb"]
+    patterns.extend(config.getoption("doctestglob", default=[]) or ["test*.txt"])
+    if config.getoption("doctestmodules", default=False):
+        patterns.append("*.py")
+    cached_modules = {nodeid.split("::", 1)[0] for nodeid in durations}
+    modules: set[str] = set()
+    invocation_dir = config.invocation_params.dir
+    ignored = [
+        invocation_dir / path for path in config.getoption("ignore", default=[]) or []
+    ]
+    ignored_globs = [
+        str(invocation_dir / pattern)
+        for pattern in config.getoption("ignore_glob", default=[]) or []
+    ]
+    for arg in config.args:
+        path = _collection_path(arg, config)
+        if path.is_file():
+            modules.add(_relative_path(path, config))
+        elif path.is_dir():
+            modules.update(
+                _directory_modules(
+                    path, config, patterns, cached_modules, ignored, ignored_globs
+                )
+            )
+    return modules
+
+
+def _directory_modules(  # noqa: PLR0913
+    path: Path,
+    config: "Config",
+    patterns: "list[str]",
+    cached_modules: "set[str]",
+    ignored: "list[Path]",
+    ignored_globs: "list[str]",
+) -> "Iterator[str]":
+    for directory, subdirs, names in os.walk(path):
+        current = Path(directory)
+        subdirs[:] = [
+            name
+            for name in subdirs
+            if not any(
+                fnmatch_ex(pattern, current / name)
+                for pattern in config.getini("norecursedirs")
+            )
+            and current / name not in ignored
+            and not any(
+                fnmatch_ex(pattern, current / name) for pattern in ignored_globs
+            )
+        ]
+        for name in names:
+            module_path = current / name
+            relative_path = _relative_path(module_path, config)
+            if (
+                module_path not in ignored
+                and not any(
+                    fnmatch_ex(pattern, module_path) for pattern in ignored_globs
+                )
+                and (
+                    relative_path in cached_modules
+                    or any(fnmatch_ex(pattern, module_path) for pattern in patterns)
+                )
+            ):
+                yield relative_path
+
+
+def _ignore_collect_path(collection_path: Path, config: "Config") -> "bool | None":
+    return _ignore_module(collection_path, config)
+
+
+def _ignore_collect_legacy(path: "os.PathLike[str]", config: "Config") -> "bool | None":
+    return _ignore_module(Path(path), config)
+
+
+# Pytest 7 introduced collection_path; register only the supported signature.
+# Assign the hook by name because pytest 5's pluggy lacks hookimpl(specname=...).
+pytest_ignore_collect = hookimpl(tryfirst=True)(
+    _ignore_collect_path
+    if int(pytest.__version__.split(".", 1)[0]) >= 7  # noqa: PLR2004
+    else _ignore_collect_legacy
+)
+
+
 class Base:
     def __init__(self, config: "Config") -> None:
         """
@@ -139,15 +277,43 @@ class Base:
 class PytestSplitPlugin(Base):
     def __init__(self, config: "Config"):
         super().__init__(config)
+        self.module_groups: dict[str, int] = {}
+        self.module_grouping = algorithms.ModuleGrouping(
+            algorithms.Algorithms[config.option.splitting_algorithm].value
+        )
 
         if not self.cached_durations:
             message = self.writer.markup(
                 "\n[pytest-split] No test durations found. Pytest-split will "
-                "split tests evenly when no durations are found. "
+                "split tests (or modules with --no-module-splits) evenly when no durations are found. "
                 "\n[pytest-split] You can expect better results in consequent runs, "
                 "when test timings have been documented.\n"
             )
             self.writer.line(message)
+
+    @hookimpl(hookwrapper=True)
+    def pytest_collection(self) -> "Iterator[None]":
+        if not self.config.option.no_module_splits:
+            yield
+            return
+
+        self.module_groups = self.module_grouping.module_groups(
+            self.config.option.splits,
+            _module_paths(self.config, self.cached_durations),
+            self.cached_durations,
+        )
+        # Explicit module/node arguments bypass pytest_ignore_collect. Filter them
+        # before pytest creates collectors, including when all arguments vanish.
+        original_args = self.config.args
+        self.config.args = [
+            arg
+            for arg in original_args
+            if not _ignore_module(_collection_path(arg, self.config), self.config)
+        ]
+        try:
+            yield
+        finally:
+            self.config.args = original_args
 
     @hookimpl(trylast=True)
     def pytest_collection_modifyitems(
@@ -160,10 +326,16 @@ class PytestSplitPlugin(Base):
         group_idx: int = config.option.group
 
         algo = algorithms.Algorithms[config.option.splitting_algorithm].value
-        groups = algo(splits, items, self.cached_durations)
+        if config.option.no_module_splits:
+            groups = self.module_grouping(
+                splits, items, self.cached_durations, module_groups=self.module_groups
+            )
+        else:
+            groups = algo(splits, items, self.cached_durations)
         group = groups[group_idx - 1]
 
-        ensure_ipynb_compatibility(group, items)
+        if not config.option.no_module_splits:
+            ensure_ipynb_compatibility(group, items)
 
         items[:] = group.selected
         config.hook.pytest_deselected(items=group.deselected)
