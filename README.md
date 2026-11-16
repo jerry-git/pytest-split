@@ -53,6 +53,25 @@ However, when there are major changes in the suite compared to what's stored in 
 
 The splitting algorithm can be controlled with the `--splitting-algorithm` CLI option and defaults to `duration_based_chunks`. For more information about the different algorithms and their tradeoffs, please see the section below.
 
+### Input arguments
+
+| Argument | Description |
+|----------|-------------|
+| `--store-durations` | Store test durations for future runs. |
+| `--durations-path PATH` | Path to the durations file. Defaults to `.test_durations` in the current working directory. |
+| `--splits N` | Number of groups to split the tests into. Use with `--group`. |
+| `--group N` | Group to run, numbered from 1 to `--splits`. |
+| `--splitting-algorithm ALGORITHM` | Choose `duration_based_chunks` (default) or `least_duration`. |
+| `--no-module-splits` | Keep each module's tests in the same group and skip importing and collecting modules assigned to other groups. Works with either splitting algorithm. |
+| `--clean-durations` | Remove stored timings for tests absent from the current run when used with `--store-durations`. |
+
+With `--no-module-splits`, durations are aggregated per module; modules without timings use the average known module duration.
+Group assignment happens before collection, using sorted module paths, so test-order randomization does not change which group owns each module.
+
+```sh
+pytest --splits 3 --group 1 --no-module-splits --splitting-algorithm least_duration
+```
+
 ### CLI commands
 #### slowest-tests
 Lists the slowest tests based on the information stored in the test durations file. See `slowest-tests --help` for more
@@ -60,7 +79,7 @@ Lists the slowest tests based on the information stored in the test durations fi
 
 ## Interactions with other pytest plugins
 * [`pytest-random-order`](https://github.com/jbasko/pytest-random-order) and [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly):
-   ⚠️ `pytest-split` running with the `duration_based_chunks` algorithm is **incompatible** with test-order-randomization plugins.
+   ⚠️ `pytest-split` running with the `duration_based_chunks` algorithm without `--no-module-splits` is **incompatible** with test-order-randomization plugins.
   Test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all.
   Instead, a global random seed needs to be computed before running the tests (for example using `$RANDOM` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.
 
